@@ -38,21 +38,29 @@ To publish an existing tag again, run the workflow by hand with that tag (Action
 
 **The signing key.** The apt repository is signed with the secret `APT_GPG_PRIVATE_KEY`, an ASCII-armored private key without a passphrase. Without it, the workflow attaches the packages and skips the repository.
 
-- To use the same key as MITI's apt repository, set it from MITI's backup:
+The key, created 2026-11-02:
 
-  ```bash
-  gh secret set APT_GPG_PRIVATE_KEY --repo hiran-t/MITI-sdk < miti-apt-key.asc
-  ```
+- **Name:** "MITI SDK apt repository"
+- **Type:** RSA 4096, like MITI's, with no expiry
+- **Fingerprint:** `8DD6 9B84 2E59 9DAA 8E07 D0A5 96C5 DC6F D235 6237`
 
-- To use a key of its own instead, create one on a trusted machine, store it, and back it up offline:
+Users trust it once, and changing it later means every user adds the new `key.gpg` again. Keep its backup offline.
 
-  ```bash
-  export GNUPGHOME="$(mktemp -d)"
-  gpg --batch --passphrase '' --quick-gen-key "MITI SDK apt repository" ed25519 sign never
-  gpg --armor --export-secret-keys "MITI SDK apt repository" | gh secret set APT_GPG_PRIVATE_KEY --repo hiran-t/MITI-sdk
-  gpg --armor --export-secret-keys "MITI SDK apt repository" > miti-sdk-apt-key.asc   # back it up offline
-  rm -rf "$GNUPGHOME"
-  ```
+To set the secret from the backup:
+
+```bash
+gh secret set APT_GPG_PRIVATE_KEY --repo hiran-t/MITI-sdk < miti-sdk-apt-key.asc
+```
+
+To replace it, create a new key on a trusted machine, then set the secret and keep a backup. On macOS, keep `GNUPGHOME` short: gpg-agent's socket path has a length limit.
+
+```bash
+export GNUPGHOME="$HOME/.gnupg-new-key" && mkdir -m 700 "$GNUPGHOME"
+gpg --batch --passphrase '' --quick-gen-key "MITI SDK apt repository" rsa4096 sign never
+gpg --armor --export-secret-keys "MITI SDK apt repository" > miti-sdk-apt-key.asc   # back it up offline
+gh secret set APT_GPG_PRIVATE_KEY --repo hiran-t/MITI-sdk < miti-sdk-apt-key.asc
+gpgconf --kill gpg-agent && rm -rf "$GNUPGHOME"
+```
 
 **GitHub Pages.** After the first publish, serve the `gh-pages` branch: Settings → Pages → Deploy from a branch → `gh-pages`, `/ (root)`.
 
