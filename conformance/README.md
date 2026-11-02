@@ -47,8 +47,7 @@ bash conformance/run.sh url ws://127.0.0.1:8765
 foxglove_bridge 3.6 passes every base check on Humble and Jazzy: 18 pass, and 1 is skipped because it is an extension.
 
 - **Locally:** pixi on macOS arm64.
-- **Containers:** `ros:<distro>-ros-base` on arm64, with the bridge from apt (3.6.0), running the
-  same steps as CI.
+- **CI:** `ros:<distro>-ros-base` on amd64 and arm64, with the bridge from apt (3.6.0).
 
 Things this confirmed about foxglove_bridge, which docs/protocol.md now requires of every server:
 
