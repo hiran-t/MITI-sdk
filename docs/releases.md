@@ -66,7 +66,7 @@ gpgconf --kill gpg-agent && rm -rf "$GNUPGHOME"
 
 ## The apt repository
 
-- **Suites:** one per Ubuntu release, as in ROS's own repository: `jammy` holds the Humble packages, `noble` the Jazzy ones. Users pick theirs with `$UBUNTU_CODENAME`; see the [miti_bridge README](../ros/miti_bridge/README.md#install).
+- **Suites:** one per Ubuntu release, as in ROS's own repository: `jammy` holds the Humble packages, `noble` the Jazzy ones. Users pick theirs with `$UBUNTU_CODENAME`; see the [README](../README.md#install-miti_bridge).
 - **How it is built:** `packaging/build-apt-repo.sh`. `packaging/build-debs.sh` builds the packages with bloom, and `packaging/test-deb.sh` checks one the way a user installs it.
 
 ## Later: the ROS buildfarm
