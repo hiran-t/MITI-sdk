@@ -72,19 +72,20 @@ describe('base protocol', () => {
 
     it('sends message data for a subscription, with a timestamp', async () => {
       const channel = await connection.channel(FIXTURE.string.topic);
-      const since = connection.mark();
-      const subscription = connection.subscribe(channel.id);
-      const message = await connection.messageData(subscription, { since });
+      const message = await connection.firstMessage(channel.id);
       assert.match(readString(message.data), /^tick \d+$/);
-      assert.ok(message.timestamp > 0n);
-      connection.unsubscribe(subscription);
+      assert.ok(message.timestamp > 0n, `timestamp ${message.timestamp}`);
     });
 
     it('stops sending a subscription after unsubscribe', async () => {
       const channel = await connection.channel(FIXTURE.string.topic);
+      const since = connection.mark();
       const subscription = connection.subscribe(channel.id);
-      await connection.messageData(subscription, { since: connection.mark() });
-      connection.unsubscribe(subscription);
+      try {
+        await connection.messageData(subscription, { since });
+      } finally {
+        connection.unsubscribe(subscription);
+      }
       // Messages already on the way when the server read the unsubscribe may still arrive.
       await new Promise((resolve) => setTimeout(resolve, 300));
       const late = await connection.collect(isMessageData(subscription), {
@@ -96,9 +97,7 @@ describe('base protocol', () => {
 
     it('delivers an image as the fixture published it', async () => {
       const channel = await connection.channel(FIXTURE.image.topic, FIXTURE.image.type);
-      const subscription = connection.subscribe(channel.id);
-      const image = readImage((await connection.messageData(subscription)).data);
-      connection.unsubscribe(subscription);
+      const image = readImage((await connection.firstMessage(channel.id)).data);
       assert.equal(image.header.frameId, 'camera');
       assert.equal(image.width, FIXTURE.image.width);
       assert.equal(image.height, FIXTURE.image.height);
@@ -109,9 +108,7 @@ describe('base protocol', () => {
 
     it('delivers a point cloud as the fixture published it', async () => {
       const channel = await connection.channel(FIXTURE.points.topic, FIXTURE.points.type);
-      const subscription = connection.subscribe(channel.id);
-      const cloud = readPointCloud2((await connection.messageData(subscription)).data);
-      connection.unsubscribe(subscription);
+      const cloud = readPointCloud2((await connection.firstMessage(channel.id)).data);
       assert.equal(cloud.width, FIXTURE.points.width);
       assert.deepEqual(
         cloud.fields.map((field) => field.name),
@@ -123,9 +120,7 @@ describe('base protocol', () => {
 
     it('delivers TF', async () => {
       const channel = await connection.channel(FIXTURE.tf.topic, FIXTURE.tf.type);
-      const subscription = connection.subscribe(channel.id);
-      const [transform] = readTFMessage((await connection.messageData(subscription)).data);
-      connection.unsubscribe(subscription);
+      const [transform] = readTFMessage((await connection.firstMessage(channel.id)).data);
       assert.equal(transform?.header.frameId, FIXTURE.tf.parent);
       assert.equal(transform?.childFrameId, FIXTURE.tf.child);
       assert.equal(transform?.translation.x, FIXTURE.tf.x);

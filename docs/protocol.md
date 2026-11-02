@@ -207,8 +207,9 @@ Client → server:
 
 Details:
 
-- **Message data timestamp:** the time the server received the message. Panels use the stamp in
-  the message's header.
+- **Message data timestamp:** the time the server received the message, on its clock. A server on
+  simulation time has no time until its first clock message, and sends 0 until then. Panels use
+  the stamp in the message's header.
 - **Fetch asset errors:** a failed response has an error message and no asset bytes. A successful
   response has an empty error message.
 - **Service calls:** the client chooses `callId`. A server answers each call exactly once, with a

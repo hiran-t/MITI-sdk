@@ -1,4 +1,4 @@
-import { Connection } from './protocol.ts';
+import { Connection, type TimeMessage } from './protocol.ts';
 
 /** What the fixture graph (fixture/fixture_node.py) offers; change both together. */
 export const FIXTURE = {
@@ -23,8 +23,9 @@ const STARTUP_MS = 30000;
 
 /**
  * A connection to the server under test once it is ready: it accepts connections and offers the
- * fixture's topics (and service, if it has the capability). Servers and the fixture start
- * together, and DDS discovery takes seconds, longer on some distros than others.
+ * fixture's topics (and service, if it has the capability) and, on simulation time, has a clock.
+ * Servers and the fixture start together, and DDS discovery takes seconds, longer on some distros
+ * than others.
  */
 export async function connectWhenReady(): Promise<Connection> {
   const deadline = Date.now() + STARTUP_MS;
@@ -43,5 +44,11 @@ export async function connectWhenReady(): Promise<Connection> {
   await connection.channel(FIXTURE.echo.out, undefined, left());
   if (info.capabilities.includes('services'))
     await connection.service(FIXTURE.service.name, left());
+  // On simulation time a server has no time until its first clock message, and stamps what it
+  // receives before then with zero.
+  if (info.capabilities.includes('time'))
+    await connection.find((message): message is TimeMessage => message.op === 'time', {
+      timeoutMs: left(),
+    });
   return connection;
 }

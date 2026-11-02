@@ -347,6 +347,17 @@ export class Connection {
     return this.find(isMessageData(subscriptionId), options);
   }
 
+  /** Subscribes to a channel, waits for its first message and unsubscribes, also on failure. */
+  async firstMessage(channelId: number): Promise<MessageData> {
+    const since = this.mark();
+    const subscription = this.subscribe(channelId);
+    try {
+      return await this.messageData(subscription, { since });
+    } finally {
+      this.unsubscribe(subscription);
+    }
+  }
+
   sendClientMessage(channelId: number, data: Uint8Array): void {
     this.ws.send(encodeBinary(0x01, channelId, data));
   }
