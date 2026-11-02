@@ -82,14 +82,29 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - name: Install foxglove_bridge and build tools
+      - name: Install build tools, libraries and foxglove_bridge
         run: |
           apt-get update
           apt-get install -y --no-install-recommends ninja-build \
+            libboost-dev nlohmann-json3-dev libgtest-dev ros-${{ matrix.distro }}-ament-cmake-gtest \
             ros-${{ matrix.distro }}-foxglove-bridge ros-${{ matrix.distro }}-std-srvs \
             ros-${{ matrix.distro }}-sensor-msgs ros-${{ matrix.distro }}-tf2-msgs
       - run: npm ci
         working-directory: conformance
+      - name: Build libmiti and miti_bridge
+        run: |
+          source /opt/ros/${{ matrix.distro }}/setup.bash
+          colcon build --merge-install --base-paths core ros \
+            --cmake-args -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS=-Werror
+      - name: Tests
+        run: |
+          source /opt/ros/${{ matrix.distro }}/setup.bash
+          colcon test --merge-install --base-paths core ros --event-handlers console_direct+
+          colcon test-result --verbose
+      - name: Conformance against miti_bridge
+        run: |
+          source /opt/ros/${{ matrix.distro }}/setup.bash
+          bash conformance/run.sh miti-bridge install/lib/miti_bridge/miti_bridge
       # The reference for the base protocol: the suite must pass against foxglove_bridge.
       - name: Conformance against foxglove_bridge
         run: |

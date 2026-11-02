@@ -38,6 +38,9 @@ struct ChannelSpec
 {
   std::string topic;
   MessageDefinition message;
+  /// Keep this many of the newest messages and send them to each new subscriber first, as ROS
+  /// does for transient-local topics such as /tf_static. 0 keeps none.
+  size_t latched = 0;
 };
 
 namespace detail

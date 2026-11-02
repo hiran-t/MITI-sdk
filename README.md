@@ -2,12 +2,13 @@
 
 The robot side of [MITI](https://github.com/hiran-t/MITI). **miti_bridge** connects a ROS 2 robot to MITI and replaces foxglove_bridge. It is built on **libmiti**, a C++ and Python library that any program can use to stream to MITI, with or without ROS.
 
-**Status: phase 1 done: libmiti's core works; miti_bridge is not started.** libmiti passes the conformance suite, as foxglove_bridge does. Start with:
+**Status: phase 2 done.** libmiti, and miti_bridge on Humble and Jazzy, pass the conformance suite, as foxglove_bridge does. MITI connects to miti_bridge once it offers `miti.bridge.v1` (phase 3). Start with:
 
 - [docs/design.md](docs/design.md): goals, architecture, phases and decisions
 - [docs/protocol.md](docs/protocol.md): the MITI protocol, version 1 (`miti.bridge.v1`)
 - [conformance/](conformance/README.md): checks a server against the protocol, on a fixture ROS 2 graph
 - [core/](core/README.md): libmiti, the C++ core
+- [ros/miti_bridge/](ros/miti_bridge/README.md): the ROS 2 node, its parameters and how it works
 - [prototypes/generic_service_client/](prototypes/generic_service_client/README.md): calling a service of any type on Humble, which miti_bridge needs
 
 | Part          | What it is                                                                                                                         |
@@ -29,6 +30,9 @@ pixi run -e humble conformance-foxglove   # the conformance suite against foxglo
 pixi run -e humble service-prototype      # build the service-client prototype and call the fixture
 pixi run -e core test                     # build libmiti and run its tests (no ROS needed)
 pixi run -e core conformance-libmiti      # the conformance suite against libmiti's example server
+pixi run -e humble build-bridge           # libmiti and miti_bridge with colcon, into install/humble (-e jazzy too)
+pixi run -e humble test-bridge            # their tests
+pixi run -e humble conformance-bridge     # the conformance suite against miti_bridge and the fixture graph
 pixi run type-check                       # type-check the conformance suite
 ```
 

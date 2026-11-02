@@ -141,16 +141,15 @@ void Session::subscribe(const json & message)
       error("Already subscribed to channel " + std::to_string(channel));
       continue;
     }
-    const auto failure = server_.subscribe(*this, channel, subscription);
-    if (!failure.empty()) {
-      error(failure);
+    const auto found = server_.channels.find(channel);
+    if (found == server_.channels.end()) {
+      error("Unknown channel " + std::to_string(channel));
       continue;
     }
     channel_of_[subscription] = channel;
     subscription_of_[channel] = subscription;
-    scheduler_.add(
-      subscription,
-      default_options(server_.channels.at(channel)->spec().message.schema_name));
+    scheduler_.add(subscription, default_options(found->second->spec().message.schema_name));
+    server_.subscribe(*this, channel, subscription);
   }
 }
 
@@ -247,9 +246,14 @@ void Session::fetch_asset(const json & message)
     error("This server does not serve assets (no assets capability)");
     return;
   }
-  // Files are read on this thread: assets are meshes of a few megabytes, fetched once each.
-  const auto result = assets::fetch(server_.options.assets, uri);
-  send_binary(protocol::fetch_asset_response(request, result.ok, result.error, result.data));
+  // Read on another thread, so a slow disk does not stall every connection meanwhile.
+  net::post(server_.assets_pool, [impl = &server_, session = id_, request, uri] {
+      const auto result = assets::fetch(impl->options.assets, uri);
+      auto frame = protocol::fetch_asset_response(request, result.ok, result.error, result.data);
+      impl->post([impl, session, frame = std::move(frame)]() mutable {
+          if (auto target = impl->session(session)) target->send_binary(std::move(frame));
+        });
+    });
 }
 
 void Session::subscription_options(const json & message)

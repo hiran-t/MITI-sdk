@@ -17,19 +17,19 @@ status->log(cdr_bytes, receive_time_ns);  // to every subscriber, shared, not co
 
 [`examples/conformance_server.cpp`](examples/conformance_server.cpp) uses everything libmiti offers. It is a server that offers what the conformance fixture graph offers, without ROS, so the conformance suite checks libmiti against it.
 
-## Status: phase 1 of [the design](../docs/design.md)
+## Status: phases 1 and 2 of [the design](../docs/design.md)
 
 | Done                                                                                                                                                       | Not yet                                                                         |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| The base protocol: channels, subscriptions, client publishing (CDR), services, parameters, assets, time                                                    | Transforms (JPEG, point cloud reduction) and `miti.subscriptionFormat`: phase 3 |
+| The base protocol: channels, latched channels, subscriptions, client publishing (CDR), services, parameters, assets (read off the server's thread), time   | Transforms (JPEG, point cloud reduction) and `miti.subscriptionFormat`: phase 3 |
 | `miti.subscriptionOptions`: `maxRate`, `delivery`, `priority`. A transform is refused, because the server does not list `miti.transforms`                  | `miti.getSchema` and `miti.stats`: phase 3                                      |
 | The scheduler: control frames first, then priorities, round-robin, newest-wins for `latest`, a bounded queue for `all`, one frame in flight per connection | Typed messages and the Python binding: phase 4                                  |
 | Refusing handshakes that do not offer `miti.bridge.v1`                                                                                                     | TLS and authentication: later                                                   |
 
 Checked:
 
-- **gtest:** 30 tests of the scheduler, the wire format, asset paths, and the server over a real WebSocket.
-- **Conformance:** the suite passes against the example server, 24 checks.
+- **gtest:** 31 tests of the scheduler, the wire format, asset paths, and the server over a real WebSocket.
+- **Conformance:** the suite passes against the example server, 25 checks. miti_bridge, built on libmiti, passes it on Humble and Jazzy.
 - **Sanitizers:** clean under AddressSanitizer with UndefinedBehaviorSanitizer, and under ThreadSanitizer.
 - **Toolchains:** builds without warnings, from Ubuntu 22.04 (GCC 11, Boost 1.74) to macOS (Clang, Boost 1.92). CI builds and checks it on Ubuntu 22.04 and 24.04, each on amd64 and arm64.
 

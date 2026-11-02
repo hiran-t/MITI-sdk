@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <deque>
 #include <map>
 #include <memory>
 #include <string>
@@ -98,8 +99,8 @@ struct ServerImpl : std::enable_shared_from_this<ServerImpl>
   void accept();
   void opened(const std::shared_ptr<Session> & session);
   void closed(Session & session);
-  /// An error message, or empty when subscribed.
-  std::string subscribe(Session & session, uint32_t channel, uint32_t subscription);
+  /// Registers a subscription the session has added, and sends it the latched messages.
+  void subscribe(Session & session, uint32_t channel, uint32_t subscription);
   void unsubscribe(Session & session, uint32_t channel);
   void remove_channel(uint32_t id);
   void dispatch(uint32_t channel, const std::shared_ptr<const Bytes> & message, Timestamp time);
@@ -112,6 +113,8 @@ struct ServerImpl : std::enable_shared_from_this<ServerImpl>
   net::io_context ioc{1};
   const ServerOptions options;
   tcp::acceptor acceptor{ioc};
+  /// Reads assets, off the I/O thread.
+  net::thread_pool assets_pool{1};
   std::thread thread;
   uint16_t port = 0;
   std::string session_id;
@@ -122,6 +125,8 @@ struct ServerImpl : std::enable_shared_from_this<ServerImpl>
   std::map<uint32_t, std::shared_ptr<Channel>> channels;
   /// channel → session → subscription
   std::map<uint32_t, std::map<uint64_t, uint32_t>> subscribers;
+  /// The newest messages of latched channels, oldest first.
+  std::map<uint32_t, std::deque<std::pair<std::shared_ptr<const Bytes>, Timestamp>>> latched;
   struct Service
   {
     ServiceSpec spec;

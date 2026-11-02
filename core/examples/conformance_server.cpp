@@ -160,6 +160,12 @@ int main(int argc, char ** argv)
     {"/tf", ros2msg("tf2_msgs/msg/TFMessage", TF_MESSAGE_SCHEMA)});
   echo = server->add_channel(
     {"/conformance/echo", ros2msg("std_msgs/msg/String", STRING_SCHEMA)});
+  miti::ChannelSpec tf_static_spec{"/tf_static", ros2msg("tf2_msgs/msg/TFMessage", TF_MESSAGE_SCHEMA)};
+  tf_static_spec.latched = 1;
+  server->add_channel(tf_static_spec)->log(
+    Cdr().u32(1).header(now(), "map").string("odom")
+    .f64(0).f64(0).f64(0).f64(0).f64(0).f64(0).f64(1).take(),
+    now());
   server->add_service(
     {"/conformance/set_bool", "std_srvs/srv/SetBool",
       ros2msg("std_srvs/srv/SetBool_Request", "bool data"),

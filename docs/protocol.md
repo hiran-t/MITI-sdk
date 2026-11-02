@@ -177,6 +177,9 @@ instead.
 
 Rules:
 
+- **Transient-local topics.** A server delivers the newest message of each transient-local
+  publisher, such as `/tf_static`, to every client that subscribes, including clients that subscribe
+  after another one already has.
 - **One subscription per channel.** A client subscribes to a channel at most once. A server answers a
   second subscription to the same channel, or a reused subscription id, with a `status` error.
 - **Unknown channel.** A server answers `subscribe` to a channel it does not have with a `status`

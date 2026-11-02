@@ -467,10 +467,32 @@ Found along the way, for phase 2:
 - **Latched topics.** `/tf_static` and `/robot_description` are published once, as transient-local.
   A second client that subscribes after the first never sees them, because the bridge's ROS
   subscription already took the message. libmiti needs latched channels, which keep their last
-  messages for new subscribers.
+  messages for new subscribers. Done in phase 2.
 - **Asset reads.** Assets are read on the server's thread. A mesh of a few megabytes is fast to
   read, but a slow disk would stall every connection meanwhile. Reading on another thread is
-  phase 2's work.
+  phase 2's work. Done in phase 2.
+
+**Progress: phase 2 is done.** `ros/miti_bridge` is the ROS 2 node, and passes the conformance suite
+on Humble and Jazzy (25 checks). It covers:
+
+- graph discovery
+- definitions from the ament index
+- topics with QoS that matches the publishers
+- latched transient-local topics
+- client publishing
+- services through an event-driven generic client (an `rclcpp::ClientBase`, the same on both
+  distros)
+- parameters, package assets and the clock
+
+The suite gained a check that a transient-local topic reaches a client that subscribes later.
+foxglove_bridge passes it too.
+
+Not done:
+
+- **MITI against miti_bridge.** MITI must offer `miti.bridge.v1` first, a one-line change that
+  phase 3's protocol layer makes. Its client library does not check the selected subprotocol, so
+  display then works unchanged. Publishing from MITI needs CDR, also phase 3.
+- **The G1 simulation.** It was not reachable on the office network when this phase was done.
 
 ## Risks
 

@@ -21,6 +21,10 @@ pixi run -e humble conformance-foxglove
 pixi run -e jazzy conformance-foxglove
 ```
 
+```bash
+pixi run -e humble conformance-bridge
+```
+
 Without pixi, run `npm ci` in `conformance/` first, then (the ROS modes with ROS 2 sourced from `/opt/ros`):
 
 ```bash
@@ -36,6 +40,7 @@ bash conformance/run.sh url ws://127.0.0.1:8765
 ```
 
 - `libmiti` starts the example server. It needs no ROS.
+- `miti-bridge` starts the fixture and the miti_bridge binary given.
 - `foxglove` starts the fixture and foxglove_bridge.
 - `url` starts only the fixture, for a server you have already started on the same `ROS_DOMAIN_ID`.
 
@@ -53,9 +58,9 @@ bash conformance/run.sh url ws://127.0.0.1:8765
 
 ## Results
 
-libmiti's example server (`core/examples/conformance_server`) passes every check: 24, the base and the extensions implemented so far. The rest are to-dos until the phase that implements them.
+libmiti's example server (`core/examples/conformance_server`) and miti_bridge (Humble and Jazzy) pass every check: 25, the base and the extensions implemented so far. The rest are to-dos until the phase that implements them.
 
-foxglove_bridge 3.6 passes every base check on Humble and Jazzy: 18 pass, and the 6 extension checks are skipped.
+foxglove_bridge 3.6 passes every base check on Humble and Jazzy: 19 pass, and the 6 extension checks are skipped.
 
 - **Locally:** pixi on macOS arm64.
 - **CI:** `ros:<distro>-ros-base` on amd64 and arm64, with the bridge from apt (3.6.0).

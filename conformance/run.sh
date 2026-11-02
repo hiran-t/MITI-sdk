@@ -2,6 +2,8 @@
 # Runs the conformance suite against a server:
 #   conformance/run.sh libmiti core/build/examples/conformance_server
 #       libmiti's example server, which offers what the fixture graph offers; needs no ROS
+#   conformance/run.sh miti-bridge install/humble/lib/miti_bridge/miti_bridge
+#       miti_bridge beside the fixture graph
 #   conformance/run.sh foxglove
 #       foxglove_bridge beside the fixture graph, the reference for the base protocol
 #   conformance/run.sh url ws://HOST:PORT
@@ -47,6 +49,13 @@ case "$server" in
     pids+=($!)
     url="ws://127.0.0.1:$port"
     ;;
+  miti-bridge)
+    binary="${2:?conformance/run.sh miti-bridge PATH/TO/miti_bridge}"
+    start_fixture
+    "$binary" --ros-args -p port:="$port" -p address:=127.0.0.1 -p use_sim_time:=true &
+    pids+=($!)
+    url="ws://127.0.0.1:$port"
+    ;;
   foxglove)
     start_fixture
     bridge=""
@@ -64,7 +73,7 @@ case "$server" in
     start_fixture
     ;;
   *)
-    echo "Unknown server $server: use libmiti, foxglove, or url" >&2
+    echo "Unknown server $server: use libmiti, miti-bridge, foxglove, or url" >&2
     exit 2
     ;;
 esac

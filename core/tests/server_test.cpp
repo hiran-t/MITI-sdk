@@ -186,6 +186,28 @@ TEST(Server, DeliversLoggedMessagesToSubscribers)
   EXPECT_EQ(unsubscribed, 1);
 }
 
+TEST(Server, SendsLatchedMessagesToEachNewSubscriber)
+{
+  const auto server = miti::Server::create(local());
+  miti::ChannelSpec spec{"/tf_static", STRING};
+  spec.latched = 2;
+  const auto channel = server->add_channel(spec);
+  // Logged before anyone subscribes: only the newest two are kept.
+  for (uint8_t i = 1; i <= 3; ++i) channel->log(Bytes{i}, i);
+
+  for (uint32_t subscription : {5u, 6u}) {
+    Client client(server->port());
+    client.next("advertise");
+    client.send(json{
+        {"op", "subscribe"},
+        {"subscriptions", {{{"id", subscription}, {"channelId", channel->id()}}}}});
+    const auto first = client.next_binary(0x01);
+    EXPECT_EQ(u32(first, 1), subscription);
+    EXPECT_EQ(first.back(), 2);
+    EXPECT_EQ(client.next_binary(0x01).back(), 3);
+  }
+}
+
 TEST(Server, AnswersMistakesWithStatusErrors)
 {
   const auto server = miti::Server::create(local());

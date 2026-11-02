@@ -61,6 +61,7 @@ void ServerImpl::stop()
       ioc.stop();
     });
   thread.join();
+  assets_pool.join();
 }
 
 void ServerImpl::accept()
@@ -133,16 +134,16 @@ void ServerImpl::closed(Session & session)
   sessions.erase(session.id());
 }
 
-std::string ServerImpl::subscribe(Session & session, uint32_t channel, uint32_t subscription)
+void ServerImpl::subscribe(Session & session, uint32_t channel, uint32_t subscription)
 {
-  const auto found = channels.find(channel);
-  if (found == channels.end()) return "Unknown channel " + std::to_string(channel);
-  auto & list = subscribers[channel];
-  list[session.id()] = subscription;
-  if (++found->second->subscribers_ == 1 && options.on_subscribe) {
-    options.on_subscribe(*found->second);
+  const auto & found = channels.at(channel);
+  subscribers[channel][session.id()] = subscription;
+  if (++found->subscribers_ == 1 && options.on_subscribe) options.on_subscribe(*found);
+  const auto kept = latched.find(channel);
+  if (kept == latched.end()) return;
+  for (const auto & [message, time] : kept->second) {
+    session.send_message(subscription, message, time);
   }
-  return {};
 }
 
 void ServerImpl::unsubscribe(Session & session, uint32_t channel)
@@ -171,12 +172,20 @@ void ServerImpl::remove_channel(uint32_t id)
     if (options.on_unsubscribe) options.on_unsubscribe(*found->second);
   }
   channels.erase(found);
+  latched.erase(id);
   broadcast_text(json{{"op", "unadvertise"}, {"channelIds", {id}}}.dump());
 }
 
 void ServerImpl::dispatch(
   uint32_t channel, const std::shared_ptr<const Bytes> & message, Timestamp time)
 {
+  const auto found = channels.find(channel);
+  if (found == channels.end()) return;
+  if (const size_t keep = found->second->spec().latched) {
+    auto & kept = latched[channel];
+    kept.emplace_back(message, time);
+    while (kept.size() > keep) kept.pop_front();
+  }
   const auto list = subscribers.find(channel);
   if (list == subscribers.end()) return;
   for (const auto & [session_id, subscription] : list->second) {
@@ -228,7 +237,7 @@ std::shared_ptr<Session> ServerImpl::session(uint64_t id) const
 
 void Channel::log(std::shared_ptr<const Bytes> message, Timestamp receive_time) const
 {
-  if (!has_subscribers()) return;
+  if (!has_subscribers() && spec_.latched == 0) return;
   if (auto server = server_.lock()) {
     server->post([impl = server.get(), id = id_, message = std::move(message), receive_time] {
         impl->dispatch(id, message, receive_time);
@@ -238,7 +247,7 @@ void Channel::log(std::shared_ptr<const Bytes> message, Timestamp receive_time) 
 
 void Channel::log(Bytes message, Timestamp receive_time) const
 {
-  if (!has_subscribers()) return;
+  if (!has_subscribers() && spec_.latched == 0) return;
   log(std::make_shared<const Bytes>(std::move(message)), receive_time);
 }
 

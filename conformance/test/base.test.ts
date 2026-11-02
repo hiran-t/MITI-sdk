@@ -127,6 +127,28 @@ describe('base protocol', () => {
       assert.equal(transform?.rotation.w, 1);
     });
 
+    it('delivers a transient-local topic to a client that subscribes later', async () => {
+      const { topic, type, parent, child } = FIXTURE.tfStatic;
+      const channel = await connection.channel(topic, type);
+      // This client keeps the topic subscribed, so the server's own subscription already took
+      // the one message when the second client asks for it.
+      const subscription = connection.subscribe(channel.id);
+      try {
+        await connection.messageData(subscription);
+        const later = await connectWhenReady();
+        try {
+          const laterChannel = await later.channel(topic, type);
+          const [transform] = readTFMessage((await later.firstMessage(laterChannel.id)).data);
+          assert.equal(transform?.header.frameId, parent);
+          assert.equal(transform?.childFrameId, child);
+        } finally {
+          later.close();
+        }
+      } finally {
+        connection.unsubscribe(subscription);
+      }
+    });
+
     it('answers a subscription to an unknown channel with a status error', async () => {
       const since = connection.mark();
       connection.subscribe(0x7fffffff);

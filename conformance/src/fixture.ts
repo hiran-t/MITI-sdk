@@ -6,6 +6,8 @@ export const FIXTURE = {
   image: { topic: '/conformance/image', type: 'sensor_msgs/msg/Image', width: 4, height: 2 },
   points: { topic: '/conformance/points', type: 'sensor_msgs/msg/PointCloud2', width: 3 },
   tf: { topic: '/tf', type: 'tf2_msgs/msg/TFMessage', parent: 'odom', child: 'base_link', x: 1.5 },
+  /** Published once, transient-local. */
+  tfStatic: { topic: '/tf_static', type: 'tf2_msgs/msg/TFMessage', parent: 'map', child: 'odom' },
   /** Client publishing: what is published on `in` comes back on `echo`. */
   echo: { in: '/conformance/in', out: '/conformance/echo', type: 'std_msgs/msg/String' },
   service: { name: '/conformance/set_bool', type: 'std_srvs/srv/SetBool' },
