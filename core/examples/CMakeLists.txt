@@ -1,0 +1,2 @@
+add_executable(conformance_server conformance_server.cpp)
+target_link_libraries(conformance_server PRIVATE miti)

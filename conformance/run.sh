@@ -1,27 +1,22 @@
 #!/usr/bin/env bash
-# Runs the conformance suite against a server started beside the fixture graph:
-#   conformance/run.sh foxglove        foxglove_bridge, the reference for the base protocol
-#   conformance/run.sh url ws://HOST:PORT   a server already running (with the fixture started here)
-# Needs ROS 2 (a pixi environment, or /opt/ros sourced), python3 with rclpy, and Node.js 22.18+
-# with `npm ci` done in conformance/.
+# Runs the conformance suite against a server:
+#   conformance/run.sh libmiti core/build/examples/conformance_server
+#       libmiti's example server, which offers what the fixture graph offers; needs no ROS
+#   conformance/run.sh foxglove
+#       foxglove_bridge beside the fixture graph, the reference for the base protocol
+#   conformance/run.sh url ws://HOST:PORT
+#       a server already running, with the fixture graph started here
+# Needs Node.js 22.18+ with `npm ci` done in conformance/. The ROS modes also need ROS 2 (a pixi
+# environment, or /opt/ros sourced) and python3 with rclpy.
 #
-# The graph runs on its own ROS_DOMAIN_ID and on this machine only, so other robots on the network
-# neither disturb it nor see it. Settings: ROS_DOMAIN_ID, RMW_IMPLEMENTATION, CONFORMANCE_PORT.
+# The fixture graph runs on its own ROS_DOMAIN_ID and on this machine only, so other robots on the
+# network neither disturb it nor see it. Settings: ROS_DOMAIN_ID, RMW_IMPLEMENTATION,
+# CONFORMANCE_PORT.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 server="${1:-foxglove}"
 port="${CONFORMANCE_PORT:-18765}"
-
-export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-$((100 + RANDOM % 100))}"
-export RMW_IMPLEMENTATION="${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}"
-if [ "${ROS_DISTRO:-}" = "humble" ]; then
-  export ROS_LOCALHOST_ONLY=1
-else
-  export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
-fi
-# The fixture's package (its mesh) is found through the ament index, by the server too.
-export AMENT_PREFIX_PATH="$here/fixture${AMENT_PREFIX_PATH:+:$AMENT_PREFIX_PATH}"
 
 pids=()
 cleanup() {
@@ -30,11 +25,30 @@ cleanup() {
 }
 trap cleanup EXIT
 
-python3 "$here/fixture/fixture_node.py" &
-pids+=($!)
+start_fixture() {
+  export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-$((100 + RANDOM % 100))}"
+  export RMW_IMPLEMENTATION="${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}"
+  if [ "${ROS_DISTRO:-}" = "humble" ]; then
+    export ROS_LOCALHOST_ONLY=1
+  else
+    export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+  fi
+  # The fixture's package (its mesh) is found through the ament index, by the server too.
+  export AMENT_PREFIX_PATH="$here/fixture${AMENT_PREFIX_PATH:+:$AMENT_PREFIX_PATH}"
+  python3 "$here/fixture/fixture_node.py" &
+  pids+=($!)
+  echo "Fixture graph: ROS_DOMAIN_ID=$ROS_DOMAIN_ID, ${ROS_DISTRO:-ROS} with $RMW_IMPLEMENTATION"
+}
 
 case "$server" in
+  libmiti)
+    binary="${2:?conformance/run.sh libmiti PATH/TO/conformance_server}"
+    "$binary" --port "$port" --share "$here/fixture/share" &
+    pids+=($!)
+    url="ws://127.0.0.1:$port"
+    ;;
   foxglove)
+    start_fixture
     bridge=""
     for prefix in ${AMENT_PREFIX_PATH//:/ }; do
       [ -x "$prefix/lib/foxglove_bridge/foxglove_bridge" ] && bridge="$prefix/lib/foxglove_bridge/foxglove_bridge" && break
@@ -47,13 +61,14 @@ case "$server" in
     ;;
   url)
     url="${2:?conformance/run.sh url ws://HOST:PORT}"
+    start_fixture
     ;;
   *)
-    echo "Unknown server $server: use foxglove, or url ws://HOST:PORT" >&2
+    echo "Unknown server $server: use libmiti, foxglove, or url" >&2
     exit 2
     ;;
 esac
 
-echo "Conformance: $server at $url, ROS_DOMAIN_ID=$ROS_DOMAIN_ID, ${ROS_DISTRO:-ROS} with $RMW_IMPLEMENTATION"
+echo "Conformance: $server at $url"
 cd "$here"
 MITI_SERVER_URL="$url" node --test --test-reporter=spec test/*.test.ts

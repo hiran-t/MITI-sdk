@@ -21,6 +21,46 @@ jobs:
       - run: npm run type-check
         working-directory: conformance
 
+  libmiti:
+    name: libmiti (${{ matrix.runner }}${{ matrix.sanitize && ', sanitizers' || '' }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ubuntu 22.04 has the oldest supported Boost (1.74), GCC 11 and nlohmann/json 3.10.
+          - runner: ubuntu-22.04
+          - runner: ubuntu-24.04-arm
+          - runner: ubuntu-24.04
+            sanitize: address,undefined
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: conformance/package-lock.json
+      - name: Install build tools and libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build g++ \
+            libboost-dev nlohmann-json3-dev libgtest-dev
+      - name: Build
+        run: |
+          flags="-Werror"
+          if [ -n "${{ matrix.sanitize }}" ]; then
+            flags="$flags -fsanitize=${{ matrix.sanitize }} -fno-omit-frame-pointer -fno-sanitize-recover=all"
+          fi
+          cmake -S core -B core/build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_CXX_FLAGS="$flags"
+          cmake --build core/build
+      - name: Tests
+        run: ctest --test-dir core/build --output-on-failure
+      - run: npm ci
+        working-directory: conformance
+      - name: Conformance against libmiti's example server
+        run: bash conformance/run.sh libmiti core/build/examples/conformance_server
+
   ros:
     name: ${{ matrix.distro }} (${{ matrix.runner }})
     strategy:

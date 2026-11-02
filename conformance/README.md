@@ -1,6 +1,6 @@
 # Conformance suite
 
-Checks a server against [the MITI protocol](../docs/protocol.md). It runs against a fixture ROS 2 graph whose topics, service, parameter and mesh it knows.
+Checks a server against [the MITI protocol](../docs/protocol.md). The checks know the fixture's topics, service, parameter and mesh. A ROS server serves them from the fixture graph (`fixture/`). libmiti's example server offers the same without ROS.
 
 - **Base protocol** (`test/base.test.ts`): every server MITI talks to must pass these: libmiti servers, and foxglove_bridge until MITI drops it.
 - **Extensions** (`test/extensions.test.ts`): only for servers that select `miti.bridge.v1`. They are skipped otherwise, and are to-dos until libmiti implements them.
@@ -10,6 +10,10 @@ Checks a server against [the MITI protocol](../docs/protocol.md). It runs agains
 With pixi, from the repository root:
 
 ```bash
+pixi run -e core conformance-libmiti
+```
+
+```bash
 pixi run -e humble conformance-foxglove
 ```
 
@@ -17,7 +21,11 @@ pixi run -e humble conformance-foxglove
 pixi run -e jazzy conformance-foxglove
 ```
 
-With ROS 2 sourced from `/opt/ros` instead, run `npm ci` in `conformance/` first, then:
+Without pixi, run `npm ci` in `conformance/` first, then (the ROS modes with ROS 2 sourced from `/opt/ros`):
+
+```bash
+bash conformance/run.sh libmiti core/build/examples/conformance_server
+```
 
 ```bash
 bash conformance/run.sh foxglove
@@ -27,6 +35,7 @@ bash conformance/run.sh foxglove
 bash conformance/run.sh url ws://127.0.0.1:8765
 ```
 
+- `libmiti` starts the example server. It needs no ROS.
 - `foxglove` starts the fixture and foxglove_bridge.
 - `url` starts only the fixture, for a server you have already started on the same `ROS_DOMAIN_ID`.
 
@@ -44,7 +53,9 @@ bash conformance/run.sh url ws://127.0.0.1:8765
 
 ## Results
 
-foxglove_bridge 3.6 passes every base check on Humble and Jazzy: 18 pass, and 1 is skipped because it is an extension.
+libmiti's example server (`core/examples/conformance_server`) passes every check: 24, the base and the extensions implemented so far. The rest are to-dos until the phase that implements them.
+
+foxglove_bridge 3.6 passes every base check on Humble and Jazzy: 18 pass, and the 6 extension checks are skipped.
 
 - **Locally:** pixi on macOS arm64.
 - **CI:** `ros:<distro>-ros-base` on amd64 and arm64, with the bridge from apt (3.6.0).

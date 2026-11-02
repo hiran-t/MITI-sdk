@@ -2,6 +2,8 @@
 #   pixi run -e humble conformance-foxglove   the conformance suite against foxglove_bridge
 #   pixi run -e jazzy conformance-foxglove    the same on Jazzy
 #   pixi run -e humble service-prototype      build and try the generic service client prototype
+#   pixi run -e core test                     build libmiti and run its tests (no ROS needed)
+#   pixi run -e core conformance-libmiti      the conformance suite against libmiti's example server
 #   pixi run type-check                       type-check the conformance suite
 
 [workspace]
@@ -16,15 +18,25 @@ nodejs = "22.*"
 install = { cmd = "npm ci --no-audit --no-fund", cwd = "conformance", inputs = ["conformance/package.json", "conformance/package-lock.json"], outputs = ["conformance/node_modules/.package-lock.json"] }
 type-check = { cmd = "npx tsc --noEmit", cwd = "conformance", depends-on = ["install"], description = "Type-check the conformance suite" }
 
-# ROS 2 for the fixture graph (rclpy), the reference server (foxglove_bridge) and C++ work.
-[feature.ros.system-requirements]
+# C++: libmiti and what it needs. libmiti has no ROS dependency.
+[feature.cpp.system-requirements]
 macos = "14.0"
 
-[feature.ros.dependencies]
+[feature.cpp.dependencies]
 cmake = "<4"
 cxx-compiler = "*"
 ninja = "*"
+libboost-devel = "*"
+nlohmann_json = "*"
+gtest = "*"
 
+[feature.cpp.tasks]
+configure = { cmd = "cmake -S core -B core/build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_PREFIX_PATH=$CONDA_PREFIX", inputs = ["core/CMakeLists.txt"], outputs = ["core/build/build.ninja"] }
+build = { cmd = "cmake --build core/build", depends-on = ["configure"], description = "Build libmiti, its tests and examples" }
+test = { cmd = "ctest --test-dir core/build --output-on-failure", depends-on = ["build"], description = "Run libmiti's tests" }
+conformance-libmiti = { cmd = "bash conformance/run.sh libmiti core/build/examples/conformance_server", depends-on = ["build", "install"], description = "Run the conformance suite against libmiti's example server" }
+
+# ROS 2 for the fixture graph (rclpy) and the reference server (foxglove_bridge).
 [feature.ros.tasks]
 conformance-foxglove = { cmd = "bash conformance/run.sh foxglove", depends-on = ["install"], description = "Run the conformance suite against foxglove_bridge and the fixture graph" }
 fixture = { cmd = "bash conformance/fixture/run-fixture.sh", description = "Start the fixture graph on its own" }
@@ -67,5 +79,6 @@ ros-jazzy-ros2topic = "*"
 ros-jazzy-ros2service = "*"
 
 [environments]
-humble = ["humble", "ros"]
-jazzy = ["jazzy", "ros"]
+core = ["cpp"]
+humble = ["humble", "ros", "cpp"]
+jazzy = ["jazzy", "ros", "cpp"]

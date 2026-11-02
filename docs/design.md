@@ -449,6 +449,28 @@ the robot available for testing. Phases 3 and 4 are independent once phase 1 is 
   and arm64.
 - **Development environments:** pixi, `pixi.toml`.
 
+**Progress: phase 1 is done.** `core/` holds libmiti, which passes the conformance suite against
+its example server.
+
+- **What it implements:**
+  - the base protocol
+  - `miti.subscriptionOptions` (`maxRate`, `delivery`, `priority`) and the scheduler
+  - assets with an allowlist
+  - the C++ API, installable with `find_package(libmiti)`
+- **How it is checked:** 30 gtests, and clean runs under AddressSanitizer, UndefinedBehaviorSanitizer
+  and ThreadSanitizer.
+- **What it builds on:** from Ubuntu 22.04 (GCC 11, Boost 1.74) to macOS (Clang, Boost 1.92).
+
+Found along the way, for phase 2:
+
+- **Latched topics.** `/tf_static` and `/robot_description` are published once, as transient-local.
+  A second client that subscribes after the first never sees them, because the bridge's ROS
+  subscription already took the message. libmiti needs latched channels, which keep their last
+  messages for new subscribers.
+- **Asset reads.** Assets are read on the server's thread. A mesh of a few megabytes is fast to
+  read, but a slow disk would stall every connection meanwhile. Reading on another thread is
+  phase 2's work.
+
 ## Risks
 
 - **Generic service calls on Humble.** Settled in phase 0. `prototypes/generic_service_client`

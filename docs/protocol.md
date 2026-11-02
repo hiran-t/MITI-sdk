@@ -177,6 +177,8 @@ instead.
 
 Rules:
 
+- **One subscription per channel.** A client subscribes to a channel at most once. A server answers a
+  second subscription to the same channel, or a reused subscription id, with a `status` error.
 - **Unknown channel.** A server answers `subscribe` to a channel it does not have with a `status`
   error and ignores that subscription.
 - **Missing capability.** A server answers an operation whose capability it does not list with a

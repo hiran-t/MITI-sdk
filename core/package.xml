@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>libmiti</name>
+  <version>0.1.0</version>
+  <description>Serves MITI over WebSocket with the MITI protocol. Plain CMake, no ROS dependency; the package.xml lets colcon and rosdep build it in a ROS workspace.</description>
+  <maintainer email="thongpanchang.h@gmail.com">MITI Contributors</maintainer>
+  <license>MIT</license>
+  <url type="repository">https://github.com/hiran-t/MITI-sdk</url>
+
+  <buildtool_depend>cmake</buildtool_depend>
+  <build_depend>boost</build_depend>
+  <build_depend>nlohmann-json-dev</build_depend>
+  <test_depend>gtest</test_depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>
