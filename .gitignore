@@ -12,3 +12,7 @@ wheelhouse/
 # Node
 node_modules/
 .DS_Store
+# pixi
+.pixi/
+# prototype builds
+build-*/

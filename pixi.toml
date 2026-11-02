@@ -1,0 +1,71 @@
+# Development environments for the MITI SDK, without a system ROS install:
+#   pixi run -e humble conformance-foxglove   the conformance suite against foxglove_bridge
+#   pixi run -e jazzy conformance-foxglove    the same on Jazzy
+#   pixi run -e humble service-prototype      build and try the generic service client prototype
+#   pixi run type-check                       type-check the conformance suite
+
+[workspace]
+name = "miti-sdk"
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64"]
+
+[dependencies]
+nodejs = "22.*"
+
+[tasks]
+install = { cmd = "npm ci --no-audit --no-fund", cwd = "conformance", inputs = ["conformance/package.json", "conformance/package-lock.json"], outputs = ["conformance/node_modules/.package-lock.json"] }
+type-check = { cmd = "npx tsc --noEmit", cwd = "conformance", depends-on = ["install"], description = "Type-check the conformance suite" }
+
+# ROS 2 for the fixture graph (rclpy), the reference server (foxglove_bridge) and C++ work.
+[feature.ros.system-requirements]
+macos = "14.0"
+
+[feature.ros.dependencies]
+cmake = "<4"
+cxx-compiler = "*"
+ninja = "*"
+
+[feature.ros.tasks]
+conformance-foxglove = { cmd = "bash conformance/run.sh foxglove", depends-on = ["install"], description = "Run the conformance suite against foxglove_bridge and the fixture graph" }
+fixture = { cmd = "bash conformance/fixture/run-fixture.sh", description = "Start the fixture graph on its own" }
+service-prototype = { cmd = "bash prototypes/generic_service_client/run.sh", description = "Build the generic service client prototype and call the fixture's service" }
+
+[feature.humble]
+channels = [{ channel = "robostack-humble", priority = 1 }]
+
+[feature.humble.dependencies]
+ros-humble-rclpy = "*"
+ros-humble-rclcpp = "*"
+ros-humble-rcpputils = "*"
+ros-humble-rosidl-typesupport-introspection-cpp = "*"
+ros-humble-rmw-fastrtps-cpp = "*"
+ros-humble-std-msgs = "*"
+ros-humble-std-srvs = "*"
+ros-humble-sensor-msgs = "*"
+ros-humble-tf2-msgs = "*"
+ros-humble-rosgraph-msgs = "*"
+ros-humble-foxglove-bridge = ">=3.6,<4"
+ros-humble-ros2topic = "*"
+ros-humble-ros2service = "*"
+
+[feature.jazzy]
+channels = [{ channel = "robostack-jazzy", priority = 1 }]
+
+[feature.jazzy.dependencies]
+ros-jazzy-rclpy = "*"
+ros-jazzy-rclcpp = "*"
+ros-jazzy-rcpputils = "*"
+ros-jazzy-rosidl-typesupport-introspection-cpp = "*"
+ros-jazzy-rmw-fastrtps-cpp = "*"
+ros-jazzy-std-msgs = "*"
+ros-jazzy-std-srvs = "*"
+ros-jazzy-sensor-msgs = "*"
+ros-jazzy-tf2-msgs = "*"
+ros-jazzy-rosgraph-msgs = "*"
+ros-jazzy-foxglove-bridge = ">=3.6,<4"
+ros-jazzy-ros2topic = "*"
+ros-jazzy-ros2service = "*"
+
+[environments]
+humble = ["humble", "ros"]
+jazzy = ["jazzy", "ros"]

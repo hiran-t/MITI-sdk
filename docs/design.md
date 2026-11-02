@@ -303,7 +303,8 @@ arrays through the buffer protocol, without copies.
 - The bridge offers the services found in the graph, with schemas split from the `.srv`
   definition.
 - Humble's rclcpp has no generic service client, so this is written on rcl, loading the type
-  support by name, for both distros.
+  support by name, for both distros. `prototypes/generic_service_client` shows how, and works on
+  both.
 
 **Parameters:** an async parameter client per node, cached, with a 5 s timeout.
 
@@ -438,10 +439,21 @@ MITI keeps working with foxglove_bridge until phase 6.
 In total, about 13–15 weeks. Sizes are rough. They assume one developer working with Claude, with
 the robot available for testing. Phases 3 and 4 are independent once phase 1 is done.
 
+**Progress (2026-11-02): phase 0 is done.**
+
+- **Protocol:** protocol.md.
+- **Conformance suite and fixture graph:** `conformance/`. foxglove_bridge 3.6 passes every base
+  check on Humble and Jazzy.
+- **Service-client prototype:** `prototypes/generic_service_client`, which works on both distros.
+- **CI:** `.github/workflows/ci.yml`. It runs both of the above in `ros:<distro>-ros-base` on amd64
+  and arm64.
+- **Development environments:** pixi, `pixi.toml`.
+
 ## Risks
 
-- **Generic service calls on Humble:** rcl-level code that loads type support by name. Phase 0
-  prototypes it first.
+- **Generic service calls on Humble.** Settled in phase 0. `prototypes/generic_service_client`
+  calls a service of a type known only at run time, with CDR in and out, on Humble and Jazzy. It
+  uses rcl, type support looked up by symbol name, and `rmw_(de)serialize`.
 - **A public API is a long-term promise.** Breaking changes are allowed during 0.x and need a
   major version after 1.0. Keep the 1.0 surface small: typed channels, raw channels, services,
   parameters, assets and time.

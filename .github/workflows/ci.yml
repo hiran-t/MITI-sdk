@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  type-check:
+    name: Conformance suite types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: conformance/package-lock.json
+      - run: npm ci
+        working-directory: conformance
+      - run: npm run type-check
+        working-directory: conformance
+
+  ros:
+    name: ${{ matrix.distro }} (${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [humble, jazzy]
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    container: ros:${{ matrix.distro }}-ros-base
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Install foxglove_bridge and build tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ninja-build \
+            ros-${{ matrix.distro }}-foxglove-bridge ros-${{ matrix.distro }}-std-srvs \
+            ros-${{ matrix.distro }}-sensor-msgs ros-${{ matrix.distro }}-tf2-msgs
+      - run: npm ci
+        working-directory: conformance
+      # The reference for the base protocol: the suite must pass against foxglove_bridge.
+      - name: Conformance against foxglove_bridge
+        run: |
+          source /opt/ros/${{ matrix.distro }}/setup.bash
+          bash conformance/run.sh foxglove
+      - name: Generic service client prototype
+        run: |
+          source /opt/ros/${{ matrix.distro }}/setup.bash
+          bash prototypes/generic_service_client/run.sh

@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>miti_conformance_fixture</name>
+  <version>0.0.0</version>
+  <description>Assets of the MITI conformance fixture graph. Installed by putting conformance/fixture on AMENT_PREFIX_PATH; not built.</description>
+  <maintainer email="thongpanchang.h@gmail.com">MITI Contributors</maintainer>
+  <license>MIT</license>
+</package>
