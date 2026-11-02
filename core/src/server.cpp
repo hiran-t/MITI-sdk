@@ -240,7 +240,8 @@ void ServerImpl::transform(
   if (!job.running) {
     job.current = message;
     job.current_time = time;
-    job.current_recipients = {recipient};
+    // assign, not `= {recipient}`: GCC 13 with sanitizers warns falsely about the latter.
+    job.current_recipients.assign(1, recipient);
     run_transform(key);
     return;
   }
