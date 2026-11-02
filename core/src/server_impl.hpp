@@ -17,6 +17,7 @@
 
 #include "miti/server.hpp"
 #include "scheduler.hpp"
+#include "transforms.hpp"
 
 namespace miti::detail
 {
@@ -42,6 +43,10 @@ public:
   void send_text(std::string text);
   void send_binary(Bytes frame);
   void send_message(uint32_t subscription, std::shared_ptr<const Bytes> message, Timestamp time);
+  /// A transformed message for a subscription, or why there is none. Dropped when the
+  /// subscription changed its transform since (another generation).
+  void deliver(uint32_t subscription, uint32_t generation, std::shared_ptr<const Bytes> output,
+    const std::string & warning, Timestamp time);
   /// The server removed a channel this session may be subscribed to.
   void channel_removed(uint32_t channel);
   void close();
@@ -60,6 +65,10 @@ private:
   void get_parameters(const nlohmann::json & message);
   void fetch_asset(const nlohmann::json & message);
   void subscription_options(const nlohmann::json & message);
+  void get_schema(const nlohmann::json & message);
+  void subscribe_stats(const nlohmann::json & message);
+  void schedule_stats(uint64_t generation);
+  void send_stats();
   void error(const std::string & message);
   void pump();
   void ended();
@@ -77,6 +86,18 @@ private:
   std::map<uint32_t, uint32_t> channel_of_;       // subscription → channel
   std::map<uint32_t, uint32_t> subscription_of_;  // channel → subscription
   std::map<uint32_t, ClientChannel> client_channels_;
+  struct SubscriptionState
+  {
+    std::optional<transforms::Transform> transform;
+    /// Increases with each change of transform; older transformed messages are dropped.
+    uint32_t generation = 0;
+    bool warned = false;
+  };
+  std::map<uint32_t, SubscriptionState> states_;  // by subscription
+  std::optional<net::steady_timer> stats_timer_;
+  std::chrono::milliseconds stats_interval_{1000};
+  Scheduler::Clock::time_point stats_since_;
+  uint64_t stats_generation_ = 0;
 };
 
 struct ServerImpl : std::enable_shared_from_this<ServerImpl>
@@ -106,6 +127,19 @@ struct ServerImpl : std::enable_shared_from_this<ServerImpl>
   void dispatch(uint32_t channel, const std::shared_ptr<const Bytes> & message, Timestamp time);
   void call_service(Session & session, uint32_t service, uint32_t call, const std::string & encoding,
     Bytes request);
+
+  /// Who waits for a transformed message.
+  struct Recipient
+  {
+    uint64_t session;
+    uint32_t subscription;
+    uint32_t generation;
+  };
+  /// Transforms a channel's message for a subscription. One transform runs per channel and
+  /// transform at a time, for every subscription that asked for it; a message that arrives while
+  /// one runs waits, and a newer one replaces it.
+  void transform(uint32_t channel, const transforms::Transform & transform,
+    const std::shared_ptr<const Bytes> & message, Timestamp time, Recipient recipient);
   void broadcast_text(const std::string & text);
   std::shared_ptr<Session> session(uint64_t id) const;
 
@@ -115,6 +149,8 @@ struct ServerImpl : std::enable_shared_from_this<ServerImpl>
   tcp::acceptor acceptor{ioc};
   /// Reads assets, off the I/O thread.
   net::thread_pool assets_pool{1};
+  /// Runs transforms (JPEG, point cloud reduction), off the I/O thread.
+  net::thread_pool transforms_pool{2};
   std::thread thread;
   uint16_t port = 0;
   std::string session_id;
@@ -134,6 +170,19 @@ struct ServerImpl : std::enable_shared_from_this<ServerImpl>
   };
   std::map<uint32_t, Service> services;
   std::map<uint64_t, std::shared_ptr<Session>> sessions;
+
+  struct TransformJob
+  {
+    transforms::Transform transform;
+    bool running = false;
+    std::shared_ptr<const Bytes> current, next;
+    Timestamp current_time = 0, next_time = 0;
+    std::vector<Recipient> current_recipients, next_recipients;
+  };
+  using TransformKey = std::pair<uint32_t, std::string>;  // channel, transform key
+  std::map<TransformKey, TransformJob> transform_jobs;
+  void run_transform(const TransformKey & key);
+  void transformed(const TransformKey & key, transforms::Result result);
 };
 
 }  // namespace miti::detail

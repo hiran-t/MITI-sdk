@@ -129,6 +129,14 @@ Bridge::Bridge(rclcpp::Node::SharedPtr node)
       };
   }
   options.services = has("services");
+  options.get_schema = [this](const std::string & type) -> std::optional<miti::MessageDefinition> {
+      std::lock_guard<std::mutex> lock(mutex_);
+      try {
+        return definitions_.message(type);
+      } catch (const std::exception &) {
+        return std::nullopt;
+      }
+    };
   if (has("assets")) {
     // Every installed package, so package:// URIs of robot descriptions resolve.
     for (const auto & [package, prefix] : ament_index_cpp::get_resources("packages")) {

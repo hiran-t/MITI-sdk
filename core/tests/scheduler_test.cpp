@@ -87,12 +87,13 @@ TEST(Scheduler, AllDeliveryDropsTheOldestBeyondTheLimit)
 TEST(Scheduler, MaxRateDropsMessagesThatComeTooSoon)
 {
   Scheduler scheduler(10);
-  scheduler.add(1, {10, Delivery::all, Priority::normal});  // one per 100 ms
+  scheduler.add(1, {10, Delivery::all, Priority::normal});  // one per 100 ms, 90 ms tolerated
   EXPECT_TRUE(scheduler.push_message(1, frame(1), t0));
   EXPECT_FALSE(scheduler.push_message(1, frame(2), t0 + 50ms));
-  EXPECT_TRUE(scheduler.push_message(1, frame(3), t0 + 100ms));
-  EXPECT_FALSE(scheduler.push_message(1, frame(4), t0 + 199ms));
-  EXPECT_EQ(drain(scheduler), (std::vector<int>{1, 3}));
+  EXPECT_TRUE(scheduler.push_message(1, frame(3), t0 + 95ms));  // a 10 Hz source, a little early
+  EXPECT_FALSE(scheduler.push_message(1, frame(4), t0 + 180ms));
+  EXPECT_TRUE(scheduler.push_message(1, frame(5), t0 + 185ms));
+  EXPECT_EQ(drain(scheduler), (std::vector<int>{1, 3, 5}));
 }
 
 TEST(Scheduler, ChangedOptionsApplyToNewMessages)
@@ -133,4 +134,63 @@ TEST(Scheduler, DefaultOptionsFollowTheMessageType)
   check("sensor_msgs/msg/PointCloud2", Delivery::latest, Priority::low);
   check("foxglove_msgs/msg/CompressedVideo", Delivery::all, Priority::low);
   check("std_msgs/msg/String", Delivery::all, Priority::normal);
+}
+
+TEST(Scheduler, ReportsWhatEachSubscriptionSentAndDropped)
+{
+  Scheduler scheduler(1);
+  scheduler.add(1, {});
+  scheduler.push_message(1, Frame{true, Bytes(10), nullptr}, t0);
+  scheduler.push_message(1, Frame{true, Bytes(20), nullptr}, t0);  // the queue holds one
+  EXPECT_EQ(scheduler.queued_bytes(), 20u);
+  const auto waiting = scheduler.report(t0 + 30ms);
+  ASSERT_EQ(waiting.size(), 1u);
+  EXPECT_EQ(waiting[0].dropped, 1u);
+  EXPECT_EQ(waiting[0].sent, 0u);
+  EXPECT_DOUBLE_EQ(waiting[0].oldest_queued_ms, 30);
+
+  ASSERT_TRUE(scheduler.next());
+  EXPECT_EQ(scheduler.queued_bytes(), 0u);
+  const auto sent = scheduler.report(t0 + 40ms);
+  EXPECT_EQ(sent[0].sent, 1u);
+  EXPECT_EQ(sent[0].sent_bytes, 20u);
+  EXPECT_EQ(sent[0].dropped, 0u);  // counted once, in the report before
+  EXPECT_DOUBLE_EQ(sent[0].oldest_queued_ms, 0);
+}
+
+TEST(Scheduler, ClearDropsWhatASubscriptionHasWaiting)
+{
+  Scheduler scheduler(10);
+  scheduler.add(1, {});
+  scheduler.add(2, {});
+  scheduler.push_message(1, frame(1), t0);
+  scheduler.push_message(1, frame(2), t0);
+  scheduler.push_message(2, frame(3), t0);
+  scheduler.clear(1);
+  EXPECT_EQ(scheduler.queued_bytes(), 1u);
+  EXPECT_EQ(drain(scheduler), (std::vector<int>{3}));
+  scheduler.push_message(1, frame(4), t0);  // still subscribed
+  EXPECT_EQ(drain(scheduler), (std::vector<int>{4}));
+  EXPECT_EQ(scheduler.report(t0)[0].dropped, 2u);
+}
+
+TEST(Scheduler, AdmitCountsMessagesTheRateLimitDrops)
+{
+  Scheduler scheduler(10);
+  scheduler.add(1, {10, Delivery::all, Priority::normal});
+  EXPECT_TRUE(scheduler.admit(1, t0));
+  EXPECT_FALSE(scheduler.admit(1, t0 + 50ms));
+  EXPECT_TRUE(scheduler.admit(1, t0 + 95ms));
+  EXPECT_FALSE(scheduler.admit(9, t0));
+  EXPECT_EQ(scheduler.report(t0)[0].dropped, 1u);
+}
+
+TEST(Scheduler, CountsMessagesDroppedAfterTheyWereAdmitted)
+{
+  Scheduler scheduler(10);
+  scheduler.add(1, {});
+  ASSERT_TRUE(scheduler.admit(1, t0));
+  scheduler.count_dropped(1);
+  scheduler.count_dropped(9);  // unknown: ignored
+  EXPECT_EQ(scheduler.report(t0)[0].dropped, 1u);
 }

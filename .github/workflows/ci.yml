@@ -46,8 +46,8 @@ jobs:
       - name: Install build tools and libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cmake ninja-build g++ \
-            libboost-dev nlohmann-json3-dev libgtest-dev
+          sudo apt-get install -y --no-install-recommends cmake ninja-build g++ pkg-config \
+            libboost-dev nlohmann-json3-dev libgtest-dev libturbojpeg0-dev
       - name: Build
         run: |
           flags="-Werror"
@@ -85,8 +85,9 @@ jobs:
       - name: Install build tools, libraries and foxglove_bridge
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends ninja-build \
-            libboost-dev nlohmann-json3-dev libgtest-dev ros-${{ matrix.distro }}-ament-cmake-gtest \
+          apt-get install -y --no-install-recommends ninja-build pkg-config \
+            libboost-dev nlohmann-json3-dev libgtest-dev libturbojpeg0-dev \
+            ros-${{ matrix.distro }}-ament-cmake-gtest \
             ros-${{ matrix.distro }}-foxglove-bridge ros-${{ matrix.distro }}-std-srvs \
             ros-${{ matrix.distro }}-sensor-msgs ros-${{ matrix.distro }}-tf2-msgs
       - run: npm ci

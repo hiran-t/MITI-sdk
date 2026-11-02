@@ -88,6 +88,6 @@ The parameter names are the ones foxglove_bridge uses, so MITI's launch scripts 
 
 ## Not yet
 
-- MITI connects only once it offers `miti.bridge.v1`, and it publishes JSON while miti_bridge takes CDR. Both are phase 3 of [the design](../../docs/design.md).
+- MITI connects to miti_bridge from the MITI release after 3.4.2. Earlier versions offer only foxglove_bridge's subprotocols, which miti_bridge refuses.
 - Each message is copied once on its way from ROS to the clients.
 - One executor thread serves subscriptions, service responses and the graph.

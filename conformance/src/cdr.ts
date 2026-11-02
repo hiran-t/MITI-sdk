@@ -135,6 +135,11 @@ export function readImage(data: Uint8Array) {
   };
 }
 
+export function readCompressedImage(data: Uint8Array) {
+  const reader = new CdrReader(data);
+  return { header: header(reader), format: reader.string(), data: reader.uint8Array() };
+}
+
 export function readPointCloud2(data: Uint8Array) {
   const reader = new CdrReader(data);
   const result = { header: header(reader), height: reader.uint32(), width: reader.uint32() };

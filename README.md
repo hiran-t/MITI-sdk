@@ -2,7 +2,7 @@
 
 The robot side of [MITI](https://github.com/hiran-t/MITI). **miti_bridge** connects a ROS 2 robot to MITI and replaces foxglove_bridge. It is built on **libmiti**, a C++ and Python library that any program can use to stream to MITI, with or without ROS.
 
-**Status: phase 2 done.** libmiti, and miti_bridge on Humble and Jazzy, pass the conformance suite, as foxglove_bridge does. MITI connects to miti_bridge once it offers `miti.bridge.v1` (phase 3). Start with:
+**Status: phase 3 done.** libmiti, and miti_bridge on Humble and Jazzy, pass the conformance suite. MITI connects to miti_bridge from its release after 3.4.2, and has it send cameras as JPEG and reduce point clouds on the robot. Typed messages and the Python binding are next. Start with:
 
 - [docs/design.md](docs/design.md): goals, architecture, phases and decisions
 - [docs/protocol.md](docs/protocol.md): the MITI protocol, version 1 (`miti.bridge.v1`)
@@ -10,6 +10,7 @@ The robot side of [MITI](https://github.com/hiran-t/MITI). **miti_bridge** conne
 - [core/](core/README.md): libmiti, the C++ core
 - [ros/miti_bridge/](ros/miti_bridge/README.md): the ROS 2 node, its parameters and how it works
 - [prototypes/generic_service_client/](prototypes/generic_service_client/README.md): calling a service of any type on Humble, which miti_bridge needs
+- [bench/link/](bench/link/run.sh): how late TF and a camera arrive over a slow link (`tc netem`), with miti_bridge or foxglove_bridge
 
 | Part          | What it is                                                                                                                         |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |

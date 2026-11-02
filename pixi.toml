@@ -29,6 +29,8 @@ ninja = "*"
 libboost-devel = "*"
 nlohmann_json = "*"
 gtest = "*"
+libjpeg-turbo = "*"
+pkg-config = "*"
 
 [feature.cpp.tasks]
 configure = { cmd = "cmake -S core -B core/build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_PREFIX_PATH=$CONDA_PREFIX", inputs = ["core/CMakeLists.txt"], outputs = ["core/build/build.ninja"] }

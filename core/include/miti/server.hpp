@@ -13,6 +13,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -166,6 +167,9 @@ struct ServerOptions
   ClientPublishHandlers client_publish;
   /// Set to offer parameters.
   ParameterHandler get_parameters;
+  /// The definition of a message type ("pkg/msg/Type"), or none when it is unknown. Set it to
+  /// answer miti.getSchema (the miti.schemas capability), so clients can encode what they publish.
+  std::function<std::optional<MessageDefinition>(const std::string & type)> get_schema;
   AssetOptions assets;
 
   /// A channel got its first subscriber, or lost its last.

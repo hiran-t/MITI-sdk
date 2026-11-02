@@ -16,6 +16,10 @@ endif()
 find_package(Boost 1.74 REQUIRED)
 find_package(nlohmann_json 3.10 REQUIRED)
 find_package(Threads REQUIRED)
+# TurboJPEG, for the jpeg transform: Ubuntu's libturbojpeg0-dev and conda's libjpeg-turbo both
+# install a pkg-config file, and neither a CMake package everywhere.
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(TURBOJPEG REQUIRED IMPORTED_TARGET libturbojpeg)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
@@ -24,7 +28,8 @@ add_library(miti
   src/protocol.cpp
   src/scheduler.cpp
   src/server.cpp
-  src/session.cpp)
+  src/session.cpp
+  src/transforms.cpp)
 add_library(miti::miti ALIAS miti)
 target_include_directories(miti
   PUBLIC
@@ -33,8 +38,14 @@ target_include_directories(miti
   PRIVATE src)
 # Boost and nlohmann/json stay private: programs see only include/miti.
 target_link_libraries(miti
-  PRIVATE $<BUILD_INTERFACE:Boost::headers> $<BUILD_INTERFACE:nlohmann_json::nlohmann_json>
+  PRIVATE
+    $<BUILD_INTERFACE:Boost::headers> $<BUILD_INTERFACE:nlohmann_json::nlohmann_json>
+    $<BUILD_INTERFACE:PkgConfig::TURBOJPEG>
   PUBLIC Threads::Threads)
+# A static libmiti needs TurboJPEG where it is linked.
+if(NOT BUILD_SHARED_LIBS)
+  target_link_libraries(miti INTERFACE $<INSTALL_INTERFACE:${TURBOJPEG_LINK_LIBRARIES}>)
+endif()
 target_compile_definitions(miti PRIVATE MITI_VERSION="${PROJECT_VERSION}")
 target_compile_options(miti PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra>)
 

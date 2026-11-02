@@ -8,8 +8,11 @@
   <url type="repository">https://github.com/hiran-t/MITI-sdk</url>
 
   <buildtool_depend>cmake</buildtool_depend>
+  <buildtool_depend>pkg-config</buildtool_depend>
   <build_depend>boost</build_depend>
   <build_depend>nlohmann-json-dev</build_depend>
+  <!-- The jpeg transform. Also needed where the static libmiti is linked. -->
+  <depend>libturbojpeg</depend>
   <test_depend>gtest</test_depend>
 
   <export>

@@ -38,6 +38,7 @@ class Fixture(Node):
 
         self.string_pub = self.create_publisher(String, "/conformance/string", 10)
         self.image_pub = self.create_publisher(Image, "/conformance/image", 10)
+        self.depth_pub = self.create_publisher(Image, "/conformance/depth", 10)
         self.points_pub = self.create_publisher(PointCloud2, "/conformance/points", 10)
         self.tf_pub = self.create_publisher(TFMessage, "/tf", 10)
         self.clock_pub = self.create_publisher(Clock, "/clock", 10)
@@ -88,6 +89,13 @@ class Fixture(Node):
         image.step = image.width * 3
         image.data = bytes(range(image.height * image.step))
         self.image_pub.publish(image)
+        depth = Image()
+        depth.header = image.header
+        depth.height, depth.width = 2, 4
+        depth.encoding = "16UC1"
+        depth.step = depth.width * 2
+        depth.data = bytes(depth.height * depth.step)
+        self.depth_pub.publish(depth)
 
     def publish_points(self, stamp):
         cloud = PointCloud2()
@@ -96,11 +104,13 @@ class Fixture(Node):
         cloud.height, cloud.width = 1, 3
         cloud.fields = [
             PointField(name=name, offset=4 * i, datatype=PointField.FLOAT32, count=1)
-            for i, name in enumerate(["x", "y", "z"])
+            for i, name in enumerate(["x", "y", "z", "intensity"])
         ]
-        cloud.point_step = 12
+        cloud.point_step = 16
         cloud.row_step = cloud.point_step * cloud.width
-        cloud.data = b"".join(struct.pack("<3f", i, 2.0 * i, 3.0 * i) for i in range(3))
+        cloud.data = b"".join(
+            struct.pack("<4f", i, 2.0 * i, 3.0 * i, 10.0 * i) for i in range(3)
+        )
         cloud.is_dense = True
         self.points_pub.publish(cloud)
 

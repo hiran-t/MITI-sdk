@@ -237,8 +237,12 @@ Details:
 
 Fields:
 
-- **`maxRate`:** messages per second, greater than 0. The server sends no more than this. It
-  drops messages before they are transformed or queued. `null` or a missing field means no limit.
+- **`maxRate`:** messages per second, greater than 0.
+  - The server drops a message that comes sooner than 90 % of `1 / maxRate` after the last one it
+    sent. The tolerance keeps a source at exactly `maxRate` from losing every message that comes a
+    little early.
+  - It drops messages before they are transformed or queued.
+  - `null` or a missing field means no limit.
 - **`delivery`:**
   - `all` queues every message, up to a bounded queue; the oldest are dropped when it is full.
   - `latest` keeps one waiting message per subscription, so a newer message replaces it.
@@ -262,8 +266,13 @@ How the client sends it:
 | `foxglove_msgs/msg/CompressedVideo`                                                                                                                                                                                                                                                     | `low`, `all`. Dropping a video frame breaks the frames that depend on it. |
 | Everything else                                                                                                                                                                                                                                                                         | `normal`, `all`                                                           |
 
-**Backpressure.** The server writes to a socket only while the bytes it has buffered for it are
-under a limit, by default 256 KB. Messages wait in the queues above, not in the socket.
+**Backpressure.** The server writes one frame at a time to each socket, and keeps what the socket
+holds unsent small (libmiti: 128 KB, with `TCP_NOTSENT_LOWAT` where the OS has it). Messages wait
+in the queues above, where a newer one can still replace them, rather than in the socket.
+
+An invalid `miti.subscriptionOptions` gets a `status` error and changes nothing, not even its valid
+fields. Invalid means an unknown subscription, a value out of range, or a transform the server does
+not support or that does not apply to the channel's message type.
 
 ### `miti.subscriptionFormat` (server → client)
 
@@ -282,7 +291,9 @@ under a limit, by default 256 KB. Messages wait in the queues above, not in the 
   includes going back to the channel's own format when a transform is removed.
 - **Ordering:** it comes before the first message in the new format. Every later message of that
   subscription uses it. The guarantee holds because text and binary frames share one ordered
-  socket.
+  socket. Messages still waiting in the old format are dropped.
+- A transform whose output has the input's type, such as `reduce`, does not change the format, so
+  no `miti.subscriptionFormat` is sent for it.
 
 ### Transforms
 
@@ -301,8 +312,9 @@ slot. A newer frame replaces it.
   - `format` is `jpeg`.
   - Alpha is dropped, and `mono8` becomes a grayscale JPEG.
 - `maxWidth` scales the image down to that width, keeping its aspect ratio. It never scales up.
-- Other encodings, such as `16UC1`, `32FC1` or Bayer, pass through unchanged. The server sends one
-  `status` warning per subscription when that happens.
+- Messages in other encodings, such as `16UC1`, `32FC1` or Bayer, are dropped: they would not
+  match the subscription's format. The server sends one `status` warning per subscription when
+  that happens, and `miti.stats` counts them as dropped.
 
 **`reduce`**
 
@@ -310,20 +322,24 @@ slot. A newer frame replaces it.
 - Input: a `sensor_msgs/msg/PointCloud2`.
 - Output: a `sensor_msgs/msg/PointCloud2` with `height` 1. The steps run in this order:
   1. **`fields`** keeps only the named fields, repacked without padding. `x`, `y` and `z` are
-     always kept.
+     always kept. A missing or empty list keeps every field, still repacked.
   2. **`voxel`** keeps the first point in each cube of that size.
   3. **`stride`** keeps every n-th point.
   4. **`maxPoints`** keeps evenly spaced points until no more than n are left.
 - Points with a non-finite `x`, `y` or `z` are dropped, and `is_dense` is true.
+- It needs `float32` or `float64` `x`, `y` and `z` fields and a little-endian cloud. Other clouds
+  are dropped with one `status` warning, as for `jpeg`.
 
-A transform that the server does not support, or invalid parameters, get a `status` error. The
-subscription then continues without a transform.
+A transform that the server does not support, or invalid parameters, get a `status` error, and the
+subscription keeps what it had (see [`miti.subscriptionOptions`](#mitisubscriptionoptions-client--server)).
 
 ### `miti.getSchema` and `miti.schema`
 
 - Request: `{ "op": "miti.getSchema", "id": "s1", "type": "std_msgs/msg/Bool" }`.
-- Reply: `{ "op": "miti.schema", "id": "s1", "type": "std_msgs/msg/Bool", "schemaEncoding": "ros2msg", "schema": "bool data" }`.
-- If the type is not known, the reply has `error` instead of `schemaEncoding` and `schema`.
+- Reply: `{ "op": "miti.schema", "id": "s1", "type": "std_msgs/msg/Bool", "schemaName": "std_msgs/msg/Bool", "schemaEncoding": "ros2msg", "schema": "bool data" }`.
+- `schemaName` is the type's full name, even when the request gave `pkg/Type`.
+- If the type is not known, the reply has `error` instead of `schemaName`, `schemaEncoding` and
+  `schema`.
 - Needs the `miti.schemas` capability.
 
 Clients use it to encode CDR for topics no channel advertises yet.
@@ -352,8 +368,12 @@ Clients use it to encode CDR for topics no channel advertises yet.
 ```
 
 - `sent` and `dropped` count messages since the previous report.
-- `dropped` counts every message the server did not send, whether because of `maxRate`, a
-  replaced `latest` message, or a full `all` queue.
+- `dropped` counts every message the server did not send: because of `maxRate`, a replaced
+  `latest` message, a full `all` queue, a format change, or a message its transform could not make.
+- `bytesPerSecond` is what the subscription sent over the interval, frame headers included.
+- `oldestQueuedMs` is how long the oldest message still waiting has waited; 0 when none is.
+- `bufferedBytes` is what the connection has waiting to be sent, the frame being written included.
+- `subscribeStats` again changes the interval and starts the counts over.
 - `timestamp` is Unix time in milliseconds. It is not nanoseconds, so it stays within JSON's safe
   integer range.
 - Needs the `miti.stats` capability.

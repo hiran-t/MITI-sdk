@@ -48,19 +48,19 @@ bash conformance/run.sh url ws://127.0.0.1:8765
 
 ## Layout
 
-| Path                      | What it is                                                                                                                                                                                                                         |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/protocol.ts`         | A client for the protocol, written from `docs/protocol.md`. It keeps every received message, so a check can find one that already arrived                                                                                          |
-| `src/cdr.ts`              | Just enough little-endian CDR for the fixture's messages                                                                                                                                                                           |
-| `src/fixture.ts`          | The fixture's names and values, and `connectWhenReady`, which waits until the server listens and offers the fixture's topics. Discovery takes seconds, and longer on Jazzy                                                         |
-| `fixture/fixture_node.py` | The fixture graph: `/conformance/string`, an image, a point cloud, `/tf`, `/tf_static`, `/clock`, an echo from `/conformance/in` to `/conformance/echo`, the service `/conformance/set_bool` and the parameter `robot_description` |
-| `fixture/share/`          | `fixture/` is an install prefix of its own. Its `miti_conformance_fixture` package holds `meshes/cube.stl`, which `package://` URIs resolve to once `fixture/` is on `AMENT_PREFIX_PATH`                                           |
+| Path                      | What it is                                                                                                                                                                                                                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/protocol.ts`         | A client for the protocol, written from `docs/protocol.md`. It keeps every received message, so a check can find one that already arrived                                                                                                                    |
+| `src/cdr.ts`              | Just enough little-endian CDR for the fixture's messages                                                                                                                                                                                                     |
+| `src/fixture.ts`          | The fixture's names and values, and `connectWhenReady`, which waits until the server listens and offers the fixture's topics. Discovery takes seconds, and longer on Jazzy                                                                                   |
+| `fixture/fixture_node.py` | The fixture graph: `/conformance/string`, an rgb8 image, a 16UC1 depth image, a point cloud, `/tf`, `/tf_static`, `/clock`, an echo from `/conformance/in` to `/conformance/echo`, the service `/conformance/set_bool` and the parameter `robot_description` |
+| `fixture/share/`          | `fixture/` is an install prefix of its own. Its `miti_conformance_fixture` package holds `meshes/cube.stl`, which `package://` URIs resolve to once `fixture/` is on `AMENT_PREFIX_PATH`                                                                     |
 
 ## Results
 
-libmiti's example server (`core/examples/conformance_server`) and miti_bridge (Humble and Jazzy) pass every check: 25, the base and the extensions implemented so far. The rest are to-dos until the phase that implements them.
+libmiti's example server (`core/examples/conformance_server`) and miti_bridge (Humble and Jazzy) pass every check: 33. One is skipped: it applies only to a server without `miti.transforms`. Two are to-dos, `latest` delivery and priorities, which a fast local connection cannot show; libmiti's scheduler tests check them, and `bench/link` over a slowed link.
 
-foxglove_bridge 3.6 passes every base check on Humble and Jazzy: 19 pass, and the 6 extension checks are skipped.
+foxglove_bridge 3.6 passes every base check on Humble and Jazzy: 19 pass, and the 15 extension checks are skipped.
 
 - **Locally:** pixi on macOS arm64.
 - **CI:** `ros:<distro>-ros-base` on amd64 and arm64, with the bridge from apt (3.6.0).

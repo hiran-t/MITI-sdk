@@ -489,10 +489,78 @@ foxglove_bridge passes it too.
 
 Not done:
 
-- **MITI against miti_bridge.** MITI must offer `miti.bridge.v1` first, a one-line change that
-  phase 3's protocol layer makes. Its client library does not check the selected subprotocol, so
-  display then works unchanged. Publishing from MITI needs CDR, also phase 3.
+- **MITI against miti_bridge.** Done in phase 3a.
 - **The G1 simulation.** It was not reachable on the office network when this phase was done.
+
+**Progress: phase 3a is done. MITI works with miti_bridge** (MITI branch `feat/miti-bridge`).
+
+- **In MITI:**
+  - **Protocol client.** `src/lib/bridge/protocol.ts` replaces `FoxgloveClient` and keeps its API.
+    It offers `miti.bridge.v1` first, and sends `miti.*` operations only to a server that selected
+    it.
+  - **Publishing.** Over miti_bridge it is CDR. A type that no topic advertises is looked up once
+    with `miti.getSchema`.
+  - **Rate limits.** Each topic's limits go to the bridge as `miti.subscriptionOptions`, and the
+    client then skips its own `maxRate` gate.
+  - **Status bar.** It names the bridge MITI is connected to.
+- **In libmiti and miti_bridge:**
+  - **`miti.getSchema`:** libmiti's `get_schema` callback, and the bridge's definitions from the
+    ament index.
+  - **`maxRate`:** it tolerates 10 %, so a source at exactly `maxRate` is not halved by jitter.
+- **Checked in a browser.** MITI showed the fixture graph's topics and messages from miti_bridge.
+  - Its Button Switch published a `std_msgs/String`, which the fixture echoed back.
+  - It published a `std_msgs/Int32` on a topic that nothing advertised; ROS received `data: 42`.
+  - The same MITI still worked with foxglove_bridge.
+
+**Progress: phase 3b is done. Transforms, formats and link stats work end to end.**
+
+- **In libmiti:**
+  - **Transforms.** `jpeg` (TurboJPEG) and `reduce`, run on two threads of their own.
+    Subscribers that ask for the same transform of a channel share one run.
+  - **`miti.subscriptionFormat`** before the first message in a new format.
+  - **`miti.stats`.** The server reports each connection's subscriptions: bytes per second, sent,
+    dropped, and how long the oldest waiting message has waited.
+  - **Sockets.** `TCP_NODELAY`, and at most 128 KB unsent in the kernel (`TCP_NOTSENT_LOWAT`), so
+    frames wait where a newer one can replace them.
+- **In MITI:**
+  - **Subscriptions** take a `transform`. It is sent only when every subscriber of the topic asks
+    for the same one, since they all receive its output.
+  - **Image panel.** It has Compression: JPEG on robot (the default) or Off. The 3D Scene's camera
+    images ask for the same. `jpeg` waits for a raw frame in an encoding JPEG can hold, so depth
+    images stay raw.
+  - **Point clouds.** The 3D Scene asks for `reduce` to its Point limit, so points over the limit
+    never cross the network.
+  - **Status bar and source details** show the link's bytes per second, drops and backlog.
+- **Checked:** 50 gtests, clean under the sanitizers, and on Ubuntu 22.04 in Docker (Boost 1.74,
+  TurboJPEG 2.1). Conformance has 33 checks, and libmiti and miti_bridge pass them on Humble and
+  Jazzy. The Humble .deb passes them too, installed in a fresh container; it brings `libturbojpeg`.
+
+**The link targets, measured** with `bench/link/run.sh`. The setup:
+
+- A robot publishes a raw 1280×720 rgb8 camera at 30 Hz and TF at 50 Hz.
+- The bridge is behind `tc netem` at 20 Mbit/s with 30 ms of delay.
+- The client asks for the camera at 15 fps, as MITI's Image panel does by default.
+
+| Bridge, camera        | TF late, p50 / p95 | Camera              | Camera late, p95 |
+| --------------------- | ------------------ | ------------------- | ---------------- |
+| miti_bridge, JPEG q80 | 35 / 62 ms         | 14.3 fps, 86 KB     | 88 ms            |
+| miti_bridge, raw      | 1.4 / 1.9 s        | 0.9 fps, 2.7 MB     | 2.2 s            |
+| foxglove_bridge, raw  | 11 / 14 s          | 0.9 fps (every one) | 15 s             |
+
+Both targets are met: TF p95 is under 150 ms with the camera streaming, and the camera arrives at
+10 fps or more, less than 300 ms behind.
+
+- **foxglove_bridge.** It queues every frame, so TF arrived once a second, 14 s late.
+- **Raw frames.** A raw frame takes 1.1 s to cross this link, and TF waits behind the frame being
+  sent.
+- **Overload.** A camera at every frame (28 fps of JPEG) asks for more than the link carries. TF
+  then arrives about 1 s late: TCP keeps the link's buffer full. Keeping under the link's capacity
+  is what keeps it fast. MITI's default of 15 fps does that here; adapting the rate to the link is
+  later work.
+- **Unshaped,** the raw camera arrives at 29.7 fps (83 MB/s), and TF's p95 is 7 ms. The socket
+  limit costs no throughput.
+
+Phase 4 is next: typed messages and the Python binding.
 
 ## Risks
 
@@ -520,7 +588,7 @@ Not done:
 | 2026-11-02 | Public, MIT. A library that robot programs build on spreads only if anyone can use it. If only MITI-Pro had the bridge, free MITI would depend on foxglove_bridge forever. Pro features, such as a multi-robot hub, sign-in or fleet views, can build on top of it.                                                                                                                                        |
 | 2026-11-02 | miti_bridge replaces foxglove_bridge in MITI, and MITI drops foxglove_bridge once robots have switched. miti_bridge serves MITI only, so it publishes CDR only and does not offer Foxglove's subprotocols.                                                                                                                                                                                                 |
 | 2026-11-02 | It lives in `MITI-sdk`, the robot side's repository. The widget SDK moved out to `MITI-widget-sdk`.                                                                                                                                                                                                                                                                                                        |
-| 2026-11-02 | Installed with `sudo apt install ros-$ROS_DISTRO-miti-bridge` and started with `ros2 launch miti_bridge miti_start`. The .debs come from MITI-sdk's own signed apt repository first, one suite per Ubuntu release. They go to the ROS buildfarm once the API is stable (1.0). This part of phase 5 came early: .debs built with bloom, and checked on every change by installing them in fresh containers. |     |
+| 2026-11-02 | Installed with `sudo apt install ros-$ROS_DISTRO-miti-bridge` and started with `ros2 launch miti_bridge miti_start`. The .debs come from MITI-sdk's own signed apt repository first, one suite per Ubuntu release. They go to the ROS buildfarm once the API is stable (1.0). This part of phase 5 came early: .debs built with bloom, and checked on every change by installing them in fresh containers. |
 
 ## Open decisions
 

@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <vector>
 
 #include "miti/server.hpp"
 
@@ -34,6 +35,10 @@ struct Frame
   bool binary = true;
   Bytes head;
   std::shared_ptr<const Bytes> body;
+  /// When it was queued, for miti.stats.
+  std::chrono::steady_clock::time_point queued{};
+
+  size_t size() const {return head.size() + (body ? body->size() : 0);}
 };
 
 /// Holds what a connection has to send and picks the next frame: control frames first, then
@@ -55,11 +60,31 @@ public:
 
   /// JSON operations, service and parameter replies, time: sent before any message.
   void push_control(Frame frame);
-  /// Queues a message for a subscription; drops it when it comes sooner than maxRate allows.
-  /// Returns whether it was queued.
+  /// Whether a message of a subscription may go now under its maxRate; one that may not is
+  /// counted as dropped. A transformed message is admitted before it is transformed.
+  bool admit(uint32_t subscription, Clock::time_point now);
+  /// Queues an admitted message: a newer one replaces it under `latest` delivery, and the oldest
+  /// goes when an `all` queue is full.
+  void enqueue(uint32_t subscription, Frame frame, Clock::time_point now);
+  /// Counts an admitted message that never reached the queue, as one its transform could not make.
+  void count_dropped(uint32_t subscription);
+  /// admit, then enqueue. Returns whether the message was queued.
   bool push_message(uint32_t subscription, Frame frame, Clock::time_point now);
+  /// Drops what a subscription has waiting, as when the format of its messages changes.
+  void clear(uint32_t subscription);
 
   std::optional<Frame> next();
+
+  /// What a subscription sent and dropped since the last report.
+  struct Report
+  {
+    uint32_t subscription;
+    uint64_t sent, sent_bytes, dropped;
+    double oldest_queued_ms;
+  };
+  std::vector<Report> report(Clock::time_point now);
+  /// The bytes of every frame waiting.
+  size_t queued_bytes() const {return queued_bytes_;}
 
 private:
   struct Queue
@@ -68,9 +93,13 @@ private:
     std::deque<Frame> pending;
     bool ready = false;  // listed in ready_
     std::optional<Clock::time_point> last_accepted;
+    uint64_t sent = 0, sent_bytes = 0, dropped = 0;
   };
 
+  void drop_front(Queue & queue);
+
   size_t queue_limit_;
+  size_t queued_bytes_ = 0;
   std::deque<Frame> control_;
   std::map<uint32_t, Queue> queues_;
   /// Subscriptions with pending messages, by priority, in turn order.

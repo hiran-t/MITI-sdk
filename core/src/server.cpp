@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <stdexcept>
@@ -62,6 +63,7 @@ void ServerImpl::stop()
     });
   thread.join();
   assets_pool.join();
+  transforms_pool.join();
 }
 
 void ServerImpl::accept()
@@ -89,6 +91,9 @@ std::vector<std::string> ServerImpl::capabilities() const
   if (options.get_parameters) list.push_back("parameters");
   if (assets::enabled(options.assets)) list.push_back("assets");
   if (options.time) list.push_back("time");
+  if (options.get_schema) list.push_back("miti.schemas");
+  list.push_back("miti.transforms");
+  list.push_back("miti.stats");
   return list;
 }
 
@@ -218,6 +223,82 @@ void ServerImpl::call_service(
   state->call = call;
   state->encoding = spec.response.encoding;
   found->second.handler(request, ServiceResponder(std::move(state)));
+}
+
+void ServerImpl::transform(
+  uint32_t channel, const transforms::Transform & transform,
+  const std::shared_ptr<const Bytes> & message, Timestamp time, Recipient recipient)
+{
+  const TransformKey key{channel, transform.key()};
+  auto & job = transform_jobs[key];
+  job.transform = transform;
+  // Another subscription asking for the same message joins it.
+  if (job.running && job.current == message) {
+    job.current_recipients.push_back(recipient);
+    return;
+  }
+  if (!job.running) {
+    job.current = message;
+    job.current_time = time;
+    job.current_recipients = {recipient};
+    run_transform(key);
+    return;
+  }
+  if (job.next == message) {
+    job.next_recipients.push_back(recipient);
+    return;
+  }
+  // A newer message replaces the one waiting, which is never transformed. Those waiting for it get
+  // the newer one instead: each was let through for a frame, though its maxRate may hold this one.
+  job.next = message;
+  job.next_time = time;
+  auto & waiting = job.next_recipients;
+  waiting.erase(
+    std::remove_if(waiting.begin(), waiting.end(), [&recipient](const Recipient & other) {
+      return other.session == recipient.session && other.subscription == recipient.subscription;
+    }),
+    waiting.end());
+  waiting.push_back(recipient);
+}
+
+void ServerImpl::run_transform(const TransformKey & key)
+{
+  auto & job = transform_jobs.at(key);
+  job.running = true;
+  net::post(transforms_pool, [this, key, transform = job.transform, input = job.current] {
+      auto result = transforms::apply(transform, *input);
+      post([this, key, result = std::move(result)]() mutable {transformed(key, std::move(result));});
+    });
+}
+
+void ServerImpl::transformed(const TransformKey & key, transforms::Result result)
+{
+  const auto found = transform_jobs.find(key);
+  if (found == transform_jobs.end()) return;
+  auto & job = found->second;
+  std::shared_ptr<const Bytes> output;
+  std::string warning;
+  if (auto * bytes = std::get_if<Bytes>(&result)) {
+    output = std::make_shared<const Bytes>(std::move(*bytes));
+  } else {
+    warning = std::get<std::string>(result);
+  }
+  for (const auto & recipient : job.current_recipients) {
+    if (auto target = session(recipient.session)) {
+      target->deliver(recipient.subscription, recipient.generation, output, warning,
+        job.current_time);
+    }
+  }
+  if (!job.next) {
+    transform_jobs.erase(found);
+    return;
+  }
+  job.current = std::move(job.next);
+  job.current_time = job.next_time;
+  job.current_recipients = std::move(job.next_recipients);
+  job.next.reset();
+  job.next_recipients.clear();
+  run_transform(key);
 }
 
 void ServerImpl::broadcast_text(const std::string & text)

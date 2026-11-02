@@ -4,6 +4,9 @@ import { Connection, type TimeMessage } from './protocol.ts';
 export const FIXTURE = {
   string: { topic: '/conformance/string', type: 'std_msgs/msg/String' },
   image: { topic: '/conformance/image', type: 'sensor_msgs/msg/Image', width: 4, height: 2 },
+  /** An encoding the jpeg transform cannot encode. */
+  depth: { topic: '/conformance/depth', type: 'sensor_msgs/msg/Image', encoding: '16UC1' },
+  /** Fields x, y, z and intensity; point i is (i, 2i, 3i), with intensity 10i. */
   points: { topic: '/conformance/points', type: 'sensor_msgs/msg/PointCloud2', width: 3 },
   tf: { topic: '/tf', type: 'tf2_msgs/msg/TFMessage', parent: 'odom', child: 'base_link', x: 1.5 },
   /** Published once, transient-local. */

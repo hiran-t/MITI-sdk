@@ -17,19 +17,21 @@ status->log(cdr_bytes, receive_time_ns);  // to every subscriber, shared, not co
 
 [`examples/conformance_server.cpp`](examples/conformance_server.cpp) uses everything libmiti offers. It is a server that offers what the conformance fixture graph offers, without ROS, so the conformance suite checks libmiti against it.
 
-## Status: phases 1 and 2 of [the design](../docs/design.md)
+## Status: phases 1 to 3 of [the design](../docs/design.md)
 
-| Done                                                                                                                                                       | Not yet                                                                         |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| The base protocol: channels, latched channels, subscriptions, client publishing (CDR), services, parameters, assets (read off the server's thread), time   | Transforms (JPEG, point cloud reduction) and `miti.subscriptionFormat`: phase 3 |
-| `miti.subscriptionOptions`: `maxRate`, `delivery`, `priority`. A transform is refused, because the server does not list `miti.transforms`                  | `miti.getSchema` and `miti.stats`: phase 3                                      |
-| The scheduler: control frames first, then priorities, round-robin, newest-wins for `latest`, a bounded queue for `all`, one frame in flight per connection | Typed messages and the Python binding: phase 4                                  |
-| Refusing handshakes that do not offer `miti.bridge.v1`                                                                                                     | TLS and authentication: later                                                   |
+| Done                                                                                                                                                       | Not yet                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| The base protocol: channels, latched channels, subscriptions, client publishing (CDR), services, parameters, assets (read off the server's thread), time   | Typed messages and the Python binding: phase 4 |
+| `miti.subscriptionOptions`: `maxRate`, `delivery`, `priority` and `transform`, with `miti.subscriptionFormat`                                              | TLS and authentication: later                  |
+| Transforms: `jpeg` (TurboJPEG) and `reduce` (point clouds)                                                                                                 |                                                |
+| `miti.getSchema` (the `get_schema` callback) and `miti.stats`                                                                                              |                                                |
+| The scheduler: control frames first, then priorities, round-robin, newest-wins for `latest`, a bounded queue for `all`, one frame in flight per connection |                                                |
+| Refusing handshakes that do not offer `miti.bridge.v1`                                                                                                     |                                                |
 
 Checked:
 
-- **gtest:** 31 tests of the scheduler, the wire format, asset paths, and the server over a real WebSocket.
-- **Conformance:** the suite passes against the example server, 25 checks. miti_bridge, built on libmiti, passes it on Humble and Jazzy.
+- **gtest:** 50 tests of the scheduler, the wire format, asset paths, the transforms, and the server over a real WebSocket.
+- **Conformance:** the suite passes against the example server, 33 checks. miti_bridge, built on libmiti, passes it on Humble and Jazzy.
 - **Sanitizers:** clean under AddressSanitizer with UndefinedBehaviorSanitizer, and under ThreadSanitizer.
 - **Toolchains:** builds without warnings, from Ubuntu 22.04 (GCC 11, Boost 1.74) to macOS (Clang, Boost 1.92). CI builds and checks it on Ubuntu 22.04 and 24.04, each on amd64 and arm64.
 
@@ -40,10 +42,11 @@ Checked:
 - Its methods, and a channel's `log`, may be called from any thread: they hand their work to that thread.
 - Callbacks from `ServerOptions` run on that thread and must not block it. Hand longer work to another thread, and answer through the `ServiceResponder` or the parameter `reply` the callback was given. Both may be called from any thread.
 - A service call that no one answers fails with "No response" once the last copy of its responder is gone.
+- Transforms run on two threads of their own. Subscribers that ask for the same transform of a channel share one run, and a frame that arrives while the previous one is still being transformed waits in a single slot, where a newer frame replaces it.
 
 **Sending.**
 
-- Each connection writes one frame at a time. Messages wait in its scheduler, where a newer one can still replace them, and not in the socket.
+- Each connection writes one frame at a time. Messages wait in its scheduler, where a newer one can still replace them, and not in the socket: the socket holds at most 128 KB unsent (`TCP_NOTSENT_LOWAT`, on Linux and macOS), and sends small messages at once (`TCP_NODELAY`).
 - A message's bytes are shared by every subscriber. Each connection writes only its own 13-byte header in front of them.
 
 **Assets.**
@@ -54,14 +57,14 @@ Checked:
 
 ## Build
 
-With pixi, from the repository root (the environment brings CMake, a compiler, Boost, nlohmann/json and GoogleTest):
+With pixi, from the repository root (the environment brings CMake, a compiler, Boost, nlohmann/json, TurboJPEG and GoogleTest):
 
 ```bash
 pixi run -e core test                  # build, then run the gtests
 pixi run -e core conformance-libmiti   # the conformance suite against the example server
 ```
 
-Without pixi, install CMake, Ninja, a C++17 compiler, Boost 1.74 or newer, nlohmann/json 3.10 or newer and GoogleTest. On Ubuntu that is `cmake ninja-build g++ libboost-dev nlohmann-json3-dev libgtest-dev`. Then:
+Without pixi, install CMake, Ninja, pkg-config, a C++17 compiler, Boost 1.74 or newer, nlohmann/json 3.10 or newer, TurboJPEG and GoogleTest. On Ubuntu that is `cmake ninja-build pkg-config g++ libboost-dev nlohmann-json3-dev libturbojpeg0-dev libgtest-dev`. Then:
 
 ```bash
 cmake -S core -B core/build -G Ninja && cmake --build core/build && ctest --test-dir core/build

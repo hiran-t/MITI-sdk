@@ -11,6 +11,8 @@
 #include <csignal>
 #include <cstring>
 #include <iostream>
+#include <map>
+#include <optional>
 #include <string>
 #include <thread>
 
@@ -148,12 +150,23 @@ int main(int argc, char ** argv)
       reply(std::move(found));
     };
   options.assets.packages["miti_conformance_fixture"] = share + "/miti_conformance_fixture";
+  options.get_schema = [](const std::string & type) -> std::optional<miti::MessageDefinition> {
+      const std::map<std::string, std::string> known{
+        {"std_msgs/msg/String", STRING_SCHEMA}, {"sensor_msgs/msg/Image", IMAGE_SCHEMA},
+        {"sensor_msgs/msg/PointCloud2", POINT_CLOUD2_SCHEMA},
+        {"tf2_msgs/msg/TFMessage", TF_MESSAGE_SCHEMA}};
+      const auto found = known.find(type);
+      if (found == known.end()) return std::nullopt;
+      return ros2msg(type, found->second);
+    };
 
   auto server = miti::Server::create(std::move(options));
   const auto string = server->add_channel(
     {"/conformance/string", ros2msg("std_msgs/msg/String", STRING_SCHEMA)});
   const auto image = server->add_channel(
     {"/conformance/image", ros2msg("sensor_msgs/msg/Image", IMAGE_SCHEMA)});
+  const auto depth = server->add_channel(
+    {"/conformance/depth", ros2msg("sensor_msgs/msg/Image", IMAGE_SCHEMA)});
   const auto points = server->add_channel(
     {"/conformance/points", ros2msg("sensor_msgs/msg/PointCloud2", POINT_CLOUD2_SCHEMA)});
   const auto tf = server->add_channel(
@@ -198,16 +211,20 @@ int main(int argc, char ** argv)
         Cdr().header(stamp, "camera").u32(2).u32(4).string("rgb8").u8(0).u32(12).bytes(pixels)
         .take(),
         stamp);
+      depth->log(
+        Cdr().header(stamp, "camera").u32(2).u32(4).string("16UC1").u8(0).u32(8)
+        .bytes(miti::Bytes(2 * 8)).take(),
+        stamp);
 
       Cdr cloud;
-      cloud.header(stamp, "base_link").u32(1).u32(3).u32(3);
-      const char * names[] = {"x", "y", "z"};
-      for (uint32_t i = 0; i < 3; ++i) cloud.string(names[i]).u32(4 * i).u8(7).u32(1);
-      Cdr xyz;
-      for (int i = 0; i < 3; ++i) xyz.f32(i).f32(2.0f * i).f32(3.0f * i);
-      auto data = xyz.take();
+      cloud.header(stamp, "base_link").u32(1).u32(3).u32(4);
+      const char * names[] = {"x", "y", "z", "intensity"};
+      for (uint32_t i = 0; i < 4; ++i) cloud.string(names[i]).u32(4 * i).u8(7).u32(1);
+      Cdr points_data;
+      for (int i = 0; i < 3; ++i) points_data.f32(i).f32(2.0f * i).f32(3.0f * i).f32(10.0f * i);
+      auto data = points_data.take();
       data.erase(data.begin(), data.begin() + 4);  // the points alone, without a CDR header
-      cloud.boolean(false).u32(12).u32(36).bytes(data).boolean(true);
+      cloud.boolean(false).u32(16).u32(48).bytes(data).boolean(true);
       points->log(cloud.take(), stamp);
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));

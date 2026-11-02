@@ -1,11 +1,11 @@
 // The server over a real WebSocket, with a small blocking client.
 
 #include <gtest/gtest.h>
-#include <sys/socket.h>
-#include <sys/time.h>
 
 #include <chrono>
 #include <future>
+#include <optional>
+#include <stdexcept>
 #include <thread>
 
 #include <boost/asio.hpp>
@@ -13,6 +13,7 @@
 #include <boost/beast/websocket.hpp>
 #include <nlohmann/json.hpp>
 
+#include "cdr.hpp"
 #include "miti/server.hpp"
 
 namespace net = boost::asio;
@@ -27,6 +28,17 @@ namespace
 {
 
 const miti::MessageDefinition STRING{"cdr", "std_msgs/msg/String", "ros2msg", "string data"};
+const miti::MessageDefinition IMAGE{"cdr", "sensor_msgs/Image", "ros2msg", "uint32 height"};
+
+/// A 4 by 2 sensor_msgs/Image.
+Bytes image(const std::string & encoding)
+{
+  const Bytes pixels(4 * 2 * 3, 0x80);
+  miti::cdr::Writer writer;
+  miti::cdr::write_header(writer, {1, 2, "camera"});
+  writer.u32(2).u32(4).string(encoding).u8(0).u32(12).bytes(pixels.data(), pixels.size());
+  return writer.take();
+}
 
 /// A client that blocks, and fails a test instead of hanging when nothing arrives in time.
 class Client
@@ -36,9 +48,6 @@ public:
   : ws_(ioc_)
   {
     ws_.next_layer().connect({net::ip::make_address("127.0.0.1"), port});
-    timeval timeout{5, 0};
-    setsockopt(
-      ws_.next_layer().native_handle(), SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
     ws_.set_option(websocket::stream_base::decorator(
       [protocols](websocket::request_type & request) {
         request.set(beast::http::field::sec_websocket_protocol, protocols);
@@ -56,8 +65,19 @@ public:
 
   Frame next()
   {
+    // Asio's blocking reads wait past SO_RCVTIMEO, so read asynchronously with a deadline.
     beast::flat_buffer buffer;
-    ws_.read(buffer);
+    std::optional<beast::error_code> result;
+    ws_.async_read(buffer, [&result](beast::error_code error, size_t) {result = error;});
+    ioc_.restart();
+    ioc_.run_for(5s);
+    if (!result) {
+      ws_.next_layer().cancel();
+      ioc_.restart();
+      ioc_.run();
+      throw std::runtime_error("Nothing arrived within 5 s");
+    }
+    if (*result) throw beast::system_error(*result);
     return {ws_.got_text(), beast::buffers_to_string(buffer.data())};
   }
 
@@ -148,7 +168,7 @@ TEST(Server, SendsServerInfoThenItsChannels)
   const auto info = client.next().op();
   EXPECT_EQ(info["op"], "serverInfo");
   EXPECT_EQ(info["name"], "test");
-  EXPECT_EQ(info["capabilities"], json::array({"time"}));
+  EXPECT_EQ(info["capabilities"], json::array({"time", "miti.transforms", "miti.stats"}));
   EXPECT_EQ(info["metadata"]["robot"], "r1");
   EXPECT_TRUE(info["metadata"].contains("miti.version"));
 
@@ -319,4 +339,130 @@ TEST(Server, RepliesToParameterRequestsWithTheirId)
   const auto values = client.next("parameterValues");
   EXPECT_EQ(values["id"], "p1");
   EXPECT_EQ(values["parameters"], json::parse(R"([{"name": "/robot.name", "value": "r1"}])"));
+}
+
+TEST(Server, TransformsMessagesAndSaysWhenTheirFormatChanges)
+{
+  const auto server = miti::Server::create(local());
+  const auto camera = server->add_channel({"/camera", IMAGE});
+  const auto chatter = server->add_channel({"/chatter", STRING});
+  Client client(server->port());
+  client.next("advertise");
+  client.send(json{{"op", "subscribe"}, {"subscriptions", {
+        {{"id", 1}, {"channelId", camera->id()}}, {{"id", 2}, {"channelId", chatter->id()}}}}});
+  ASSERT_TRUE(eventually([&] {return camera->has_subscribers() && chatter->has_subscribers();}));
+
+  client.send(json{{"op", "miti.subscriptionOptions"}, {"subscriptionId", 2},
+      {"transform", {{"kind", "jpeg"}}}});
+  EXPECT_EQ(client.next("status")["level"], 2);  // not an image topic
+
+  client.send(json{{"op", "miti.subscriptionOptions"}, {"subscriptionId", 1},
+      {"transform", {{"kind", "jpeg"}, {"quality", 50}}}});
+  const auto format = client.next("miti.subscriptionFormat");
+  EXPECT_EQ(format["subscriptionId"], 1);
+  EXPECT_EQ(format["encoding"], "cdr");
+  EXPECT_EQ(format["schemaName"], "sensor_msgs/msg/CompressedImage");
+  EXPECT_EQ(format["schemaEncoding"], "ros2msg");
+
+  camera->log(image("rgb8"), 7);
+  const auto frame = client.next_binary(0x01);
+  EXPECT_EQ(u32(frame, 1), 1u);
+  miti::cdr::Reader reader(frame.data() + 13, frame.size() - 13);
+  EXPECT_EQ(miti::cdr::read_header(reader).frame_id, "camera");
+  EXPECT_EQ(reader.string(), "jpeg");
+  const auto [jpeg, size] = reader.bytes();
+  ASSERT_GE(size, 2u);
+  EXPECT_EQ(jpeg[0], 0xff);
+  EXPECT_EQ(jpeg[1], 0xd8);
+
+  // One warning for messages the transform cannot make, however many there are.
+  camera->log(image("16UC1"), 8);
+  camera->log(image("16UC1"), 9);
+  EXPECT_EQ(client.next("status")["level"], 1);
+  camera->log(image("bgr8"), 10);
+  const auto next = client.next();
+  EXPECT_FALSE(next.text) << next.data;
+
+  client.send(json{{"op", "miti.subscriptionOptions"}, {"subscriptionId", 1},
+      {"transform", nullptr}});
+  EXPECT_EQ(client.next("miti.subscriptionFormat")["schemaName"], "sensor_msgs/Image");
+  const auto raw = image("rgb8");
+  camera->log(raw, 11);
+  const auto untouched = client.next_binary(0x01);
+  EXPECT_EQ(Bytes(untouched.begin() + 13, untouched.end()), raw);
+}
+
+TEST(Server, SendsStatsWhileAClientWantsThem)
+{
+  const auto server = miti::Server::create(local());
+  const auto channel = server->add_channel({"/chatter", STRING});
+  Client client(server->port());
+  client.next("advertise");
+  client.send(json{{"op", "miti.subscribeStats"}, {"intervalMs", 100}});
+  EXPECT_EQ(client.next("status")["level"], 2);
+
+  client.send(json{{"op", "subscribe"}, {"subscriptions", {{{"id", 3}, {"channelId", channel->id()}}}}});
+  ASSERT_TRUE(eventually([&] {return channel->has_subscribers();}));
+  client.send(json{{"op", "miti.subscribeStats"}, {"intervalMs", 250}});
+  // Counts start when the server handles miti.subscribeStats: log after its first stats.
+  client.next("miti.stats");
+  channel->log(Bytes(100), 1);
+  json stats;
+  for (int i = 0; i < 8; ++i) {
+    stats = client.next("miti.stats");
+    if (stats["subscriptions"][0]["sent"] == 1) break;
+  }
+  ASSERT_EQ(stats["subscriptions"][0]["sent"], 1);
+  EXPECT_GT(stats["timestamp"].get<int64_t>(), 1700000000000);
+  EXPECT_EQ(stats["bufferedBytes"], 0);
+  const auto & subscription = stats["subscriptions"][0];
+  EXPECT_EQ(subscription["subscriptionId"], 3);
+  EXPECT_EQ(subscription["dropped"], 0);
+  EXPECT_GT(subscription["bytesPerSecond"].get<double>(), 0);
+  EXPECT_EQ(subscription["oldestQueuedMs"], 0);
+
+  client.send(json{{"op", "miti.unsubscribeStats"}});
+  client.send(json{{"op", "dance"}});  // answered after the unsubscribe is handled
+  client.next("status");
+  // Two intervals with no stats.
+  std::this_thread::sleep_for(600ms);
+  channel->log(Bytes{1}, 2);
+  const auto after = client.next();
+  EXPECT_FALSE(after.text) << after.data;
+}
+
+TEST(Server, AFrameReplacedBeforeItsTransformGoesToEveryoneWhoWaitedForIt)
+{
+  const auto server = miti::Server::create(local());
+  const auto camera = server->add_channel({"/camera", IMAGE});
+  Client fast(server->port());
+  Client capped(server->port());
+  for (auto * client : {&fast, &capped}) {
+    client->next("advertise");
+    client->send(json{{"op", "subscribe"}, {"subscriptions", {{{"id", 1}, {"channelId", camera->id()}}}}});
+  }
+  ASSERT_TRUE(eventually([&] {return camera->has_subscribers();}));
+  fast.send(json{{"op", "miti.subscriptionOptions"}, {"subscriptionId", 1},
+      {"transform", {{"kind", "jpeg"}}}});
+  capped.send(json{{"op", "miti.subscriptionOptions"}, {"subscriptionId", 1}, {"maxRate", 1000},
+      {"transform", {{"kind", "jpeg"}}}});
+  fast.next("miti.subscriptionFormat");
+  capped.next("miti.subscriptionFormat");
+
+  // A large frame keeps the transform busy (tens of ms) while the next two arrive. The capped
+  // client is let through for the first of them, 2 ms later, but not for the second, right after
+  // it. The second replaces the first before it is transformed, and the capped client gets it.
+  const uint32_t width = 4000, height = 3000;
+  const Bytes pixels(size_t(width) * height * 3, 0x80);
+  miti::cdr::Writer large;
+  miti::cdr::write_header(large, {1, 2, "camera"});
+  large.u32(height).u32(width).string("rgb8").u8(0).u32(width * 3).bytes(pixels.data(), pixels.size());
+  camera->log(large.take(), 1);
+  std::this_thread::sleep_for(2ms);
+  camera->log(image("rgb8"), 2);
+  camera->log(image("rgb8"), 3);
+  for (auto * client : {&fast, &capped}) {
+    EXPECT_EQ(client->next_binary(0x01).at(5), 1);  // the receive time's low byte
+    EXPECT_EQ(client->next_binary(0x01).at(5), 3);
+  }
 }

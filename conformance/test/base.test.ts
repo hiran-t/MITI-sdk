@@ -112,7 +112,7 @@ describe('base protocol', () => {
       assert.equal(cloud.width, FIXTURE.points.width);
       assert.deepEqual(
         cloud.fields.map((field) => field.name),
-        ['x', 'y', 'z']
+        ['x', 'y', 'z', 'intensity']
       );
       const view = new DataView(cloud.data.buffer, cloud.data.byteOffset, cloud.data.byteLength);
       assert.equal(view.getFloat32(cloud.pointStep + 4, true), 2);
