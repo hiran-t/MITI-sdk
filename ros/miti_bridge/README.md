@@ -4,21 +4,7 @@ A ROS 2 node that serves the robot's topics, services, parameters and package fi
 
 ## Install
 
-On Ubuntu 22.04 (Humble) or 24.04 (Jazzy), amd64 or arm64, with ROS 2 installed:
-
-```bash
-curl -fsSL https://hiran-t.github.io/MITI-sdk/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/miti-sdk.gpg
-```
-
-```bash
-echo "deb [signed-by=/usr/share/keyrings/miti-sdk.gpg] https://hiran-t.github.io/MITI-sdk $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/miti-sdk.list
-```
-
-```bash
-sudo apt update && sudo apt install ros-$ROS_DISTRO-miti-bridge
-```
-
-The repository goes online with the first release (see [docs/releases.md](../../docs/releases.md)). Once the API is stable, the package will also come from ROS's own apt repository, with no repository to add.
+Install it from this repository's apt repository, or build it from source: both are described up front in the [repository's README](../../README.md#install-miti_bridge), since the package is not in ROS's apt repository yet.
 
 ## Run
 
