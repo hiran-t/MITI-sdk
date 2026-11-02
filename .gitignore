@@ -1,0 +1,14 @@
+# C++ and CMake
+build/
+# colcon
+install/
+log/
+# Python
+__pycache__/
+*.egg-info/
+dist/
+wheelhouse/
+.venv/
+# Node
+node_modules/
+.DS_Store
