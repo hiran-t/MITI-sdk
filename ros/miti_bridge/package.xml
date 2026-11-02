@@ -9,18 +9,23 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>libmiti</depend>
+  <!-- Linked statically: needed to build, not to run. -->
+  <build_depend>libmiti</build_depend>
   <depend>rclcpp</depend>
   <depend>ament_index_cpp</depend>
   <depend>rcpputils</depend>
   <depend>rmw</depend>
   <depend>rosidl_typesupport_introspection_cpp</depend>
   <depend>rosgraph_msgs</depend>
+  <!-- ros2 launch miti_bridge miti_start -->
+  <exec_depend>ros2launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>std_msgs</test_depend>
   <test_depend>sensor_msgs</test_depend>
   <test_depend>std_srvs</test_depend>
+  <test_depend>tf2_msgs</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

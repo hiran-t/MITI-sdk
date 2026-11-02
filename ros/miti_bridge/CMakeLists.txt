@@ -31,6 +31,9 @@ target_link_libraries(miti_bridge_core PUBLIC
 add_executable(miti_bridge src/main.cpp)
 target_link_libraries(miti_bridge PRIVATE miti_bridge_core)
 install(TARGETS miti_bridge DESTINATION lib/${PROJECT_NAME})
+# `ros2 launch` finds a launch file by its exact name: install it as miti_start too.
+install(FILES launch/miti_start.launch.py DESTINATION share/${PROJECT_NAME}/launch)
+install(FILES launch/miti_start.launch.py DESTINATION share/${PROJECT_NAME}/launch RENAME miti_start)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)

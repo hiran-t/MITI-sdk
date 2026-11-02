@@ -1,0 +1,156 @@
+name: Packages
+
+# ros-<distro>-miti-bridge (and ros-<distro>-libmiti, which it is built against) for every
+# supported ROS distro on amd64 and arm64: Humble on Ubuntu 22.04, Jazzy on Ubuntu 24.04. Each
+# package is then installed in a fresh container, the way a user installs it, started with
+# `ros2 launch miti_bridge miti_start`, and checked with the conformance suite.
+#
+# For a published release (or a run of this workflow with a tag) it then attaches the packages to
+# the release and publishes the apt repository on GitHub Pages (gh-pages branch) with the packages
+# of the last three releases. That needs the secret APT_GPG_PRIVATE_KEY: an ASCII-armored private
+# key without a passphrase (see docs/releases.md).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to package and publish (empty to only build and test this branch)
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+jobs:
+  build:
+    name: Build ${{ matrix.distro }} (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [humble, jazzy]
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    container: ros:${{ matrix.distro }}-ros-base
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - name: The tag matches the packages' version
+        if: env.TAG != ''
+        run: |
+          for file in core/package.xml ros/miti_bridge/package.xml; do
+            version="$(sed -n 's:.*<version>\(.*\)</version>.*:\1:p' "$file")"
+            [ "v$version" = "$TAG" ] || { echo "$file is $version, the tag is $TAG" >&2; exit 1; }
+          done
+          version="$(sed -n 's/^project(libmiti VERSION \([0-9.]*\).*/\1/p' core/CMakeLists.txt)"
+          [ "v$version" = "$TAG" ] || { echo "core/CMakeLists.txt is $version, the tag is $TAG" >&2; exit 1; }
+      - name: Build the .debs with bloom
+        run: |
+          source /opt/ros/${{ matrix.distro }}/setup.bash
+          bash packaging/build-debs.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: debs-${{ matrix.distro }}-${{ matrix.arch }}
+          path: dist/*.deb
+          if-no-files-found: error
+
+  install:
+    name: Install ${{ matrix.distro }} (${{ matrix.arch }})
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [humble, jazzy]
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    container: ros:${{ matrix.distro }}-ros-base
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v8
+        with:
+          name: debs-${{ matrix.distro }}-${{ matrix.arch }}
+          path: dist
+      - run: npm ci
+        working-directory: conformance
+      - name: Install, launch with miti_start, check
+        run: |
+          source /opt/ros/${{ matrix.distro }}/setup.bash
+          bash packaging/test-deb.sh
+
+  publish:
+    name: Attach and publish
+    needs: install
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - name: Get the packages
+        uses: actions/download-artifact@v8
+        with:
+          pattern: debs-*
+          merge-multiple: true
+          path: dist
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" dist/*.deb --clobber
+      - name: Publish the apt repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
+        run: |
+          if [ -z "$APT_GPG_PRIVATE_KEY" ]; then
+            echo "::warning::Add the APT_GPG_PRIVATE_KEY secret to publish the apt repository (see docs/releases.md)."
+            exit 0
+          fi
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -m 700 "$GNUPGHOME"
+          echo "$APT_GPG_PRIVATE_KEY" | gpg --batch --import
+          key="$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr/ { print $10; exit }')"
+
+          # The packages of the last three releases that have them, newest first.
+          debs="$RUNNER_TEMP/debs"
+          mkdir -p "$debs"
+          found=0
+          for tag in $(gh release list --limit 30 --exclude-drafts --json tagName --jq '.[].tagName'); do
+            if gh release download "$tag" --pattern 'ros-*.deb' --dir "$debs" 2>/dev/null; then
+              found=$((found + 1))
+              [ "$found" -ge 3 ] && break
+            fi
+          done
+          sudo apt-get install -y --no-install-recommends apt-utils
+          packaging/build-apt-repo.sh "$RUNNER_TEMP/apt" "$key" "$debs"/*.deb
+
+          # One commit, replaced each time, so old packages do not pile up in the history.
+          cd "$RUNNER_TEMP/apt"
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "apt repository for MITI SDK $TAG"
+          git push --force --quiet "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages

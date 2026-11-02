@@ -1,0 +1,6 @@
+# rosdep keys of this repository's own packages, for building their .debs with bloom
+# (packaging/build-debs.sh). ROS distros map to Ubuntu releases: Humble jammy, Jazzy noble.
+libmiti:
+  ubuntu:
+    jammy: [ros-humble-libmiti]
+    noble: [ros-jazzy-libmiti]

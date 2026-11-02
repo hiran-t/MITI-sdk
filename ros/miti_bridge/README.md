@@ -2,16 +2,48 @@
 
 A ROS 2 node that serves the robot's topics, services, parameters and package files to MITI over [the MITI protocol](../../docs/protocol.md). It is built on [libmiti](../../core/README.md), and replaces foxglove_bridge for MITI. Supported: Humble and Jazzy.
 
+## Install
+
+On Ubuntu 22.04 (Humble) or 24.04 (Jazzy), amd64 or arm64, with ROS 2 installed:
+
+```bash
+curl -fsSL https://hiran-t.github.io/MITI-sdk/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/miti-sdk.gpg
+```
+
+```bash
+echo "deb [signed-by=/usr/share/keyrings/miti-sdk.gpg] https://hiran-t.github.io/MITI-sdk $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/miti-sdk.list
+```
+
+```bash
+sudo apt update && sudo apt install ros-$ROS_DISTRO-miti-bridge
+```
+
+The repository goes online with the first release (see [docs/releases.md](../../docs/releases.md)). Once the API is stable, the package will also come from ROS's own apt repository, with no repository to add.
+
 ## Run
 
-Build it with libmiti in a workspace, then run it:
+```bash
+ros2 launch miti_bridge miti_start
+```
+
+Each [parameter](#parameters) is also a launch argument:
+
+```bash
+ros2 launch miti_bridge miti_start port:=8765 use_sim_time:=true "topic_whitelist:=['/tf.*', '/camera/.*']"
+```
+
+The launch file is installed as `miti_start` and as `miti_start.launch.py`, so both names work. To stop it, press Ctrl+C in its terminal. If another program stops `ros2 launch`, it must stop the whole process group: launch does not pass a TERM signal on to the node.
+
+## Build
+
+Build it with libmiti in a workspace:
 
 ```bash
 colcon build --merge-install --base-paths core ros
 ```
 
 ```bash
-install/lib/miti_bridge/miti_bridge --ros-args -p port:=8765
+source install/setup.bash && ros2 launch miti_bridge miti_start
 ```
 
 With pixi, from the repository root:

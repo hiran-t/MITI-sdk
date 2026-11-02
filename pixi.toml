@@ -69,6 +69,8 @@ ros-humble-ros2service = "*"
 ros-humble-ament-cmake = "*"
 ros-humble-ament-cmake-gtest = "*"
 ros-humble-ament-index-cpp = "*"
+ros-humble-ros2launch = "*"
+ros-humble-launch-ros = "*"
 
 [feature.jazzy]
 channels = [{ channel = "robostack-jazzy", priority = 1 }]
@@ -90,6 +92,8 @@ ros-jazzy-ros2service = "*"
 ros-jazzy-ament-cmake = "*"
 ros-jazzy-ament-cmake-gtest = "*"
 ros-jazzy-ament-index-cpp = "*"
+ros-jazzy-ros2launch = "*"
+ros-jazzy-launch-ros = "*"
 
 [environments]
 core = ["cpp"]

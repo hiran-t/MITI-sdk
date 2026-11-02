@@ -21,6 +21,20 @@ The bridge sends less over slow links, decided on the robot before data leaves i
 
 Panels for MITI are built with the widget SDK, [MITI-widget-sdk](https://github.com/hiran-t/MITI-widget-sdk), which was in this repository until 2026-11-02.
 
+## Install and run
+
+From this repository's apt repository (Humble on Ubuntu 22.04, Jazzy on 24.04, amd64 and arm64), after its first release. The steps are in the [miti_bridge README](ros/miti_bridge/README.md#install):
+
+```bash
+sudo apt install ros-$ROS_DISTRO-miti-bridge
+```
+
+```bash
+ros2 launch miti_bridge miti_start
+```
+
+Releases are described in [docs/releases.md](docs/releases.md).
+
 ## Develop
 
 [pixi](https://pixi.sh) brings ROS 2, foxglove_bridge, a C++ toolchain and Node.js, so no system ROS install is needed (Linux and macOS arm64):

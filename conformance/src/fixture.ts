@@ -40,17 +40,23 @@ export async function connectWhenReady(): Promise<Connection> {
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
   }
-  const info = await connection.serverInfo();
   const left = () => Math.max(deadline - Date.now(), 1000);
-  await connection.channel(FIXTURE.string.topic, undefined, left());
-  await connection.channel(FIXTURE.echo.out, undefined, left());
-  if (info.capabilities.includes('services'))
-    await connection.service(FIXTURE.service.name, left());
-  // On simulation time a server has no time until its first clock message, and stamps what it
-  // receives before then with zero.
-  if (info.capabilities.includes('time'))
-    await connection.find((message): message is TimeMessage => message.op === 'time', {
-      timeoutMs: left(),
-    });
+  try {
+    const info = await connection.serverInfo();
+    await connection.channel(FIXTURE.string.topic, undefined, left());
+    await connection.channel(FIXTURE.echo.out, undefined, left());
+    if (info.capabilities.includes('services'))
+      await connection.service(FIXTURE.service.name, left());
+    // On simulation time a server has no time until its first clock message, and stamps what it
+    // receives before then with zero.
+    if (info.capabilities.includes('time'))
+      await connection.find((message): message is TimeMessage => message.op === 'time', {
+        timeoutMs: left(),
+      });
+  } catch (error) {
+    // An open connection would keep the test run from ending.
+    connection.close();
+    throw error;
+  }
   return connection;
 }
