@@ -21,18 +21,21 @@ jobs:
       - run: npm run type-check
         working-directory: conformance
 
+  # Every supported Ubuntu on amd64 and arm64. Ubuntu 22.04 has the oldest supported Boost (1.74),
+  # GCC 11 and nlohmann/json 3.10.
   libmiti:
-    name: libmiti (${{ matrix.runner }}${{ matrix.sanitize && ', sanitizers' || '' }})
+    name: libmiti (Ubuntu ${{ matrix.ubuntu }}, ${{ matrix.arch }}${{ matrix.check == 'sanitizers' && ', sanitizers' || '' }})
     strategy:
       fail-fast: false
       matrix:
+        ubuntu: ['22.04', '24.04']
+        arch: [amd64, arm64]
+        check: [tests]
         include:
-          # Ubuntu 22.04 has the oldest supported Boost (1.74), GCC 11 and nlohmann/json 3.10.
-          - runner: ubuntu-22.04
-          - runner: ubuntu-24.04-arm
-          - runner: ubuntu-24.04
-            sanitize: address,undefined
-    runs-on: ${{ matrix.runner }}
+          - ubuntu: '24.04'
+            arch: amd64
+            check: sanitizers
+    runs-on: ubuntu-${{ matrix.ubuntu }}${{ matrix.arch == 'arm64' && '-arm' || '' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -48,8 +51,8 @@ jobs:
       - name: Build
         run: |
           flags="-Werror"
-          if [ -n "${{ matrix.sanitize }}" ]; then
-            flags="$flags -fsanitize=${{ matrix.sanitize }} -fno-omit-frame-pointer -fno-sanitize-recover=all"
+          if [ "${{ matrix.check }}" = sanitizers ]; then
+            flags="$flags -fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
           fi
           cmake -S core -B core/build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_CXX_FLAGS="$flags"
@@ -61,14 +64,15 @@ jobs:
       - name: Conformance against libmiti's example server
         run: bash conformance/run.sh libmiti core/build/examples/conformance_server
 
+  # The container sets the Ubuntu: Humble runs on 22.04 and Jazzy on 24.04, each on amd64 and arm64.
   ros:
-    name: ${{ matrix.distro }} (${{ matrix.runner }})
+    name: ${{ matrix.distro }} (Ubuntu ${{ matrix.distro == 'humble' && '22.04' || '24.04' }}, ${{ matrix.arch }})
     strategy:
       fail-fast: false
       matrix:
         distro: [humble, jazzy]
-        runner: [ubuntu-latest, ubuntu-24.04-arm]
-    runs-on: ${{ matrix.runner }}
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     container: ros:${{ matrix.distro }}-ros-base
     defaults:
       run:

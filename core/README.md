@@ -31,7 +31,7 @@ Checked:
 - **gtest:** 30 tests of the scheduler, the wire format, asset paths, and the server over a real WebSocket.
 - **Conformance:** the suite passes against the example server, 24 checks.
 - **Sanitizers:** clean under AddressSanitizer with UndefinedBehaviorSanitizer, and under ThreadSanitizer.
-- **Toolchains:** builds without warnings, from Ubuntu 22.04 (GCC 11, Boost 1.74) to macOS (Clang, Boost 1.92).
+- **Toolchains:** builds without warnings, from Ubuntu 22.04 (GCC 11, Boost 1.74) to macOS (Clang, Boost 1.92). CI builds and checks it on Ubuntu 22.04 and 24.04, each on amd64 and arm64.
 
 ## How it runs
 

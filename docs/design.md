@@ -445,8 +445,8 @@ the robot available for testing. Phases 3 and 4 are independent once phase 1 is 
 - **Conformance suite and fixture graph:** `conformance/`. foxglove_bridge 3.6 passes every base
   check on Humble and Jazzy.
 - **Service-client prototype:** `prototypes/generic_service_client`, which works on both distros.
-- **CI:** `.github/workflows/ci.yml`. It runs both of the above in `ros:<distro>-ros-base` on amd64
-  and arm64.
+- **CI:** `.github/workflows/ci.yml`. It runs both of the above in `ros:<distro>-ros-base`:
+  Humble on Ubuntu 22.04 and Jazzy on 24.04, each on amd64 and arm64.
 - **Development environments:** pixi, `pixi.toml`.
 
 **Progress: phase 1 is done.** `core/` holds libmiti, which passes the conformance suite against
@@ -459,7 +459,8 @@ its example server.
   - the C++ API, installable with `find_package(libmiti)`
 - **How it is checked:** 30 gtests, and clean runs under AddressSanitizer, UndefinedBehaviorSanitizer
   and ThreadSanitizer.
-- **What it builds on:** from Ubuntu 22.04 (GCC 11, Boost 1.74) to macOS (Clang, Boost 1.92).
+- **What it builds on:** from Ubuntu 22.04 (GCC 11, Boost 1.74) to macOS (Clang, Boost 1.92). CI
+  checks Ubuntu 22.04 and 24.04, each on amd64 and arm64.
 
 Found along the way, for phase 2:
 

@@ -32,7 +32,10 @@ pixi run -e core conformance-libmiti      # the conformance suite against libmit
 pixi run type-check                       # type-check the conformance suite
 ```
 
-CI (`.github/workflows/ci.yml`) runs the same. libmiti runs on Ubuntu 22.04 and 24.04, amd64 and arm64, and once more with sanitizers. The ROS checks run on Humble and Jazzy, in `ros:<distro>-ros-base` containers on amd64 and arm64.
+CI (`.github/workflows/ci.yml`) runs the same, on every supported Ubuntu (22.04 and 24.04) and on both amd64 and arm64:
+
+- libmiti on each of the four, and once more with sanitizers.
+- The ROS checks in `ros:<distro>-ros-base` containers: Humble on 22.04, Jazzy on 24.04, each on both architectures.
 
 ## License
 
