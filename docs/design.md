@@ -222,7 +222,11 @@ connection, because one asset is one WebSocket message of several megabytes.
 
 - Either a list of roots with an extension allowlist (`.urdf`, `.dae`, `.stl`, `.obj`, `.glb`,
   `.gltf`, `.mtl`, `.png`, `.jpg`) and a size limit, or a program-supplied callback.
-- Resolved real paths must stay inside a root, which rejects `..` and symlink escapes.
+- `..` cannot lead out of a package or a root.
+- Real paths must stay inside a root, which also rejects symlink escapes. Inside a package,
+  symlinks are followed, as foxglove_bridge does: `colcon build --symlink-install` installs every
+  file of a package as a link into the source tree, so refusing them broke every such workspace
+  (found on the Isaac Sim G1 in v0.1.0).
 - This is the largest security surface: an endpoint that reads files on the robot.
 
 **Time:** `broadcast_time(ns)`.

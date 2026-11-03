@@ -68,11 +68,23 @@ TEST_F(Assets, ServesFilesInsideARoot)
 TEST_F(Assets, RefusesWhatLeadsOutside)
 {
   EXPECT_TRUE(refused("package://pkg/../outside/secret.stl"));
-  EXPECT_TRUE(refused("package://pkg/meshes/link.stl"));  // a symlink out of the package
+  EXPECT_TRUE(refused("package://pkg/meshes/../../outside/secret.stl"));
   EXPECT_TRUE(refused("file://" + (root / "outside/secret.stl").string()));  // no roots
   options.roots.push_back(root / "pkg");
   EXPECT_TRUE(refused("file://" + (root / "outside/secret.stl").string()));
+  EXPECT_TRUE(refused("file://" + (root / "pkg/meshes/link.stl").string()));  // a link out of a root
   EXPECT_TRUE(refused("file://relative/part.stl"));
+}
+
+TEST_F(Assets, FollowsSymlinksInsideAPackage)
+{
+  // As `colcon build --symlink-install` installs a package: its files link into the source tree.
+  EXPECT_EQ(text("package://pkg/meshes/link.stl"), "solid secret");
+  fs::create_directories(root / "install/share");
+  fs::create_directory_symlink(root / "pkg", root / "install/share/linked");
+  options.packages["linked"] = root / "install/share/linked";
+  EXPECT_EQ(text("package://linked/meshes/part.stl"), "solid part");
+  EXPECT_TRUE(refused("package://linked/../../outside/secret.stl"));
 }
 
 TEST_F(Assets, RefusesUnknownPackagesSchemesAndExtensions)

@@ -52,7 +52,8 @@ Checked:
 **Assets.**
 
 - `package://name/...` is served from `AssetOptions::packages[name]`, and `file:///...` from inside `AssetOptions::roots`.
-- Paths are resolved, with symlinks followed, before they are checked, so `..` and links cannot lead outside.
+- `..` cannot lead out of a package or a root.
+- Inside a package, symlinks are followed: `colcon build --symlink-install` installs every file as a link into the source tree. A root's files must really be inside it: there, symlinks are resolved before the check.
 - Only allowed extensions are served, up to a size limit.
 
 ## Build

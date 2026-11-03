@@ -140,9 +140,11 @@ struct ClientPublishHandlers
 /// Files clients may fetch (the assets capability, on when any package or root is set).
 struct AssetOptions
 {
-  /// `package://name/path` is served from inside packages[name].
+  /// `package://name/path` is served from inside packages[name]. `..` cannot lead out of it, and
+  /// symlinks inside it are followed, as `colcon build --symlink-install` installs every file as
+  /// one.
   std::map<std::string, std::filesystem::path> packages;
-  /// `file:///path` is served when the file is inside one of these.
+  /// `file:///path` is served when the file, symlinks resolved, is inside one of these.
   std::vector<std::filesystem::path> roots;
   /// Lowercase, with the dot.
   std::vector<std::string> extensions{
