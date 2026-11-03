@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>miti_bridge</name>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <description>Serves a ROS 2 robot's topics, services, parameters and meshes to MITI over the MITI protocol, on libmiti. Replaces foxglove_bridge for MITI.</description>
   <maintainer email="thongpanchang.h@gmail.com">MITI Contributors</maintainer>
   <license>MIT</license>
