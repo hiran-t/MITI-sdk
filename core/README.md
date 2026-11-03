@@ -19,14 +19,14 @@ status->log(cdr_bytes, receive_time_ns);  // to every subscriber, shared, not co
 
 ## Status: phases 1 to 3 of [the design](../docs/design.md)
 
-| Done                                                                                                                                                       | Not yet                                        |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| The base protocol: channels, latched channels, subscriptions, client publishing (CDR), services, parameters, assets (read off the server's thread), time   | Typed messages and the Python binding: phase 4 |
-| `miti.subscriptionOptions`: `maxRate`, `delivery`, `priority` and `transform`, with `miti.subscriptionFormat`                                              | TLS and authentication: later                  |
-| Transforms: `jpeg` (TurboJPEG) and `reduce` (point clouds)                                                                                                 |                                                |
-| `miti.getSchema` (the `get_schema` callback) and `miti.stats`                                                                                              |                                                |
-| The scheduler: control frames first, then priorities, round-robin, newest-wins for `latest`, a bounded queue for `all`, one frame in flight per connection |                                                |
-| Refusing handshakes that do not offer `miti.bridge.v1`                                                                                                     |                                                |
+| Done                                                                                                                                                       | Not yet                       |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| The base protocol: channels, latched channels, subscriptions, client publishing (CDR), services, parameters, assets (read off the server's thread), time   | Typed messages: phase 4       |
+| `miti.subscriptionOptions`: `maxRate`, `delivery`, `priority` and `transform`, with `miti.subscriptionFormat`                                              | TLS and authentication: later |
+| Transforms: `jpeg` (TurboJPEG) and `reduce` (point clouds)                                                                                                 |                               |
+| `miti.getSchema` (the `get_schema` callback) and `miti.stats`                                                                                              |                               |
+| The scheduler: control frames first, then priorities, round-robin, newest-wins for `latest`, a bounded queue for `all`, one frame in flight per connection |                               |
+| Refusing handshakes that do not offer `miti.bridge.v1`                                                                                                     |                               |
 
 Checked:
 

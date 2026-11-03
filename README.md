@@ -1,6 +1,6 @@
 # MITI SDK
 
-The robot side of [MITI](https://github.com/hiran-t/MITI). **miti_bridge** connects a ROS 2 robot to MITI and replaces foxglove_bridge. It is built on **libmiti**, a C++ and Python library that any program can use to stream to MITI, with or without ROS.
+The robot side of [MITI](https://github.com/hiran-t/MITI). **miti_bridge** connects a ROS 2 robot to MITI and replaces foxglove_bridge. It is built on **libmiti**, a C++ library that any program can use to stream to MITI, with or without ROS.
 
 ## Install miti_bridge
 
@@ -56,7 +56,7 @@ ros2 launch miti_bridge miti_start
 
 ## Status
 
-**Phase 3 is done.** libmiti, and miti_bridge on Humble and Jazzy, pass the conformance suite. MITI connects to miti_bridge from its release after 3.4.2, and has it send cameras as JPEG and reduce point clouds on the robot. Typed messages and the Python binding are next.
+**Phase 3 is done.** libmiti, and miti_bridge on Humble and Jazzy, pass the conformance suite. MITI connects to miti_bridge from its release after 3.4.2, and has it send cameras as JPEG and reduce point clouds on the robot. Typed messages are next.
 
 Where to read more:
 
@@ -69,11 +69,10 @@ Where to read more:
 - [prototypes/generic_service_client/](prototypes/generic_service_client/README.md): calling a service of any type on Humble, which miti_bridge needs
 - [bench/link/](bench/link/run.sh): how late TF and a camera arrive over a slow link (`tc netem`), with miti_bridge or foxglove_bridge
 
-| Part          | What it is                                                                                                                         |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `libmiti`     | The C++ core, without ROS: WebSocket server, priority scheduling, JPEG and point cloud reduction, typed messages for MITI's panels |
-| Python        | Bindings for `libmiti`, with numpy arrays passed without copies                                                                    |
-| `miti_bridge` | A ROS 2 node (Humble, Jazzy) on `libmiti`, which serves a robot's topics, services, parameters and meshes to MITI                  |
+| Part          | What it is                                                                                                        |
+| ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `libmiti`     | The C++ core, without ROS: WebSocket server, priority scheduling, JPEG and point cloud reduction                  |
+| `miti_bridge` | A ROS 2 node (Humble, Jazzy) on `libmiti`, which serves a robot's topics, services, parameters and meshes to MITI |
 
 The bridge sends less over slow links, decided on the robot before data leaves it: rate limits, newest-frame delivery for cameras and point clouds, priority for TF, JPEG for raw images and point cloud reduction.
 
