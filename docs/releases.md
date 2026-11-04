@@ -15,11 +15,11 @@ One version covers the whole repository. It is written in three places:
 
 The release tag is `v` and that version, for example `v0.1.0`. The Packages workflow refuses a tag that does not match all three.
 
-0.x versions may change libmiti's API from one minor version to the next. 1.0 follows [the design](design.md).
+0.x versions may change libmiti's API from one minor version to the next, but not within a ROS distro it has been released into ([The ROS buildfarm](#the-ros-buildfarm)). 1.0 follows [the design](design.md).
 
 ## Steps
 
-1. **Set the version.** Put the new version in the three files. Commit and push to `main`, and wait for CI and Packages to pass.
+1. **Set the version.** Put the new version in the three files, and add a section for it at the top of `core/CHANGELOG.rst` and `ros/miti_bridge/CHANGELOG.rst` ([REP 132](https://reps.openrobotics.org/rep-0132/) format, which bloom reads). Commit and push to `main`, and wait for CI and Packages to pass.
 2. **Publish the release:**
 
    ```bash
@@ -69,6 +69,28 @@ gpgconf --kill gpg-agent && rm -rf "$GNUPGHOME"
 - **Suites:** one per Ubuntu release, as in ROS's own repository: `jammy` holds the Humble packages, `noble` the Jazzy ones. Users pick theirs with `$UBUNTU_CODENAME`; see the [README](../README.md#install-miti_bridge).
 - **How it is built:** `packaging/build-apt-repo.sh`. `packaging/build-debs.sh` builds the packages with bloom, and `packaging/test-deb.sh` checks one the way a user installs it.
 
-## Later: the ROS buildfarm
+## The ROS buildfarm
 
-Once the API is stable (1.0), the packages go to the ROS buildfarm through `ros/rosdistro`. `ros-$ROS_DISTRO-miti-bridge` then installs from ROS's own apt repository, with no repository of ours to add.
+Releasing through the ROS buildfarm puts `ros-$ROS_DISTRO-miti-bridge` and `ros-$ROS_DISTRO-libmiti` in ROS's own repositories (`packages.ros.org`), with no repository of ours to add.
+
+**Platforms.** The buildfarm releases binaries for these (`ros2/ros_buildfarm_config`, `*/release-*build.yaml`):
+
+| Distro | Ubuntu                 | RHEL      |
+| ------ | ---------------------- | --------- |
+| Humble | jammy, amd64 and arm64 | 8, x86_64 |
+| Jazzy  | noble, amd64 and arm64 | 9, x86_64 |
+
+CI builds and tests all of them except RHEL 8, which has Boost 1.66 and nlohmann_json 3.6.1, older than libmiti needs. Humble on RHEL 8 is skipped through `package_blacklist` in `humble/release-rhel-build.yaml` of `ros2/ros_buildfarm_config`.
+
+**Packages.** Only libmiti (`core/`) and miti_bridge (`ros/miti_bridge/`) are packages: `conformance/` and `prototypes/` carry `COLCON_IGNORE` and `CATKIN_IGNORE`, so colcon, bloom and the buildfarm skip them.
+
+**API.** Once a version is in a ROS distro, later releases into that distro keep libmiti's API and ABI.
+
+**The first release:**
+
+1. A pull request to `ros/rosdistro` adding `doc` and `source` entries for this repository to `humble/distribution.yaml` and `jazzy/distribution.yaml`, with `test_pull_requests: true`. Its review checks the package names ([REP 144](https://reps.openrobotics.org/rep-0144/)) and the licenses.
+2. Once it is merged, issues on `ros2-gbp/ros2-gbp-github-org` for a release team and a release repository.
+3. `bloom-release --new-track --rosdistro humble --track humble <repository>`, then the same for Jazzy, with `v{version}` as the upstream tag. Bloom opens the `ros/rosdistro` pull request for the release.
+4. After it is merged, the packages reach `ros-testing` within a day or two, and the main repository at the distro's next sync, every two to four weeks. The status pages at `repo.ros2.org/status_page/` show each build.
+
+Later releases run `bloom-release --rosdistro <distro> <repository>` after the GitHub release.
