@@ -180,6 +180,12 @@ jobs:
           pixi run -e $DISTRO colcon --log-base log/$DISTRO test --merge-install --base-paths core ros \
             --build-base build/$DISTRO --install-base install/$DISTRO --event-handlers console_direct+
           pixi run -e $DISTRO colcon test-result --test-result-base build/$DISTRO --verbose
+      # As the README runs it on Windows, short of starting it.
+      - name: Launch file
+        shell: pwsh
+        run: >-
+          pixi run -e $env:DISTRO pwsh -NoProfile -Command
+          ". ./install/$env:DISTRO/local_setup.ps1; ros2 launch miti_bridge miti_start --show-args"
       - run: pixi run -e $DISTRO install
       - name: Conformance against miti_bridge
         run: pixi run -e $DISTRO bash conformance/run.sh miti-bridge install/$DISTRO/lib/miti_bridge/miti_bridge
