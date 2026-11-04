@@ -150,8 +150,7 @@ jobs:
 
   # RoboStack's Humble and Jazzy on Windows, built with MSVC like libmiti above. colcon prints each
   # package's whole output (console_cohesion+), since MSVC writes its errors to stdout. The
-  # foxglove_bridge reference runs on Linux only: on Windows it once in five runs did not see the
-  # fixture's topics within 30 s.
+  # reference bridge's conformance run stays on Linux.
   ros-windows:
     name: ${{ matrix.distro }} (Windows, RoboStack)
     strategy:

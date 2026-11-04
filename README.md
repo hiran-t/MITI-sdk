@@ -99,7 +99,7 @@ Panels for MITI are built with the widget SDK, [MITI-widget-sdk](https://github.
 
 ## Develop
 
-[pixi](https://pixi.sh) brings ROS 2, foxglove_bridge, a C++ toolchain and Node.js, so no system ROS install is needed (Linux, macOS arm64 and Windows x64; on Windows, run the conformance tasks from Git Bash):
+[pixi](https://pixi.sh) brings ROS 2, a C++ toolchain and Node.js, so no system ROS install is needed (Linux, macOS arm64 and Windows x64; on Windows, run the conformance tasks from Git Bash):
 
 ```bash
 pixi run -e humble conformance-foxglove   # the conformance suite against foxglove_bridge (-e jazzy too)

@@ -1,6 +1,6 @@
 # miti_bridge
 
-A ROS 2 node that serves the robot's topics, services, parameters and package files to MITI over [the MITI protocol](../../docs/protocol.md). It is built on [libmiti](../../core/README.md), and replaces foxglove_bridge for MITI. Supported: Humble and Jazzy, on Ubuntu and on Windows (built from source with pixi and RoboStack).
+A ROS 2 node that serves the robot's topics, services, parameters and package files to MITI over [the MITI protocol](../../docs/protocol.md). It is built on [libmiti](../../core/README.md). Supported: Humble and Jazzy, on Ubuntu and on Windows (built from source with pixi and RoboStack).
 
 ## Install
 
