@@ -80,7 +80,7 @@ case "$server" in
       done
     done
     [ -n "$bridge" ] || { echo "foxglove_bridge not found on AMENT_PREFIX_PATH" >&2; exit 1; }
-    # RoboStack on Windows installs foxglove_bridge's own DLLs in Library\lib, off the DLL path.
+    # RoboStack on Windows installs the reference bridge's DLLs in Library\lib, off the DLL path.
     if [ "$separator" = ';' ] && [ -n "${CONDA_PREFIX:-}" ]; then
       PATH="$(cygpath -u "$CONDA_PREFIX")/Library/lib:$PATH"
     fi
