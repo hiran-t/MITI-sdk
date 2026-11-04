@@ -164,7 +164,7 @@ jobs:
           dnf install -y epel-release 'dnf-command(config-manager)'
           dnf config-manager --set-enabled crb
           curl -fsSL --output /etc/yum.repos.d/ros2.repo http://packages.ros.org/ros2/rhel/ros2.repo
-          dnf install -y git ros-jazzy-ros-base python3-rosdep python3-colcon-common-extensions
+          dnf install -y git gcc-c++ ros-jazzy-ros-base python3-rosdep python3-colcon-common-extensions
       - uses: actions/checkout@v7
       - name: Install the dependencies with rosdep
         run: |
