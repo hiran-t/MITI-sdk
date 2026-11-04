@@ -148,6 +148,42 @@ jobs:
           source /opt/ros/${{ matrix.distro }}/setup.bash
           bash prototypes/generic_service_client/run.sh
 
+  # Jazzy on RHEL 9 (x86_64), which the ROS buildfarm also releases for. rosdep installs the
+  # dependencies, as the buildfarm resolves them. Humble's RHEL 8 has Boost 1.66, older than
+  # libmiti needs, so the buildfarm skips libmiti and miti_bridge there.
+  ros-rhel:
+    name: jazzy (RHEL 9)
+    runs-on: ubuntu-24.04
+    container: almalinux:9
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Install ROS 2 Jazzy, rosdep and colcon
+        run: |
+          dnf install -y epel-release 'dnf-command(config-manager)'
+          dnf config-manager --set-enabled crb
+          curl -fsSL --output /etc/yum.repos.d/ros2.repo http://packages.ros.org/ros2/rhel/ros2.repo
+          dnf install -y git ros-jazzy-ros-base python3-rosdep python3-colcon-common-extensions
+      - uses: actions/checkout@v7
+      - name: Install the dependencies with rosdep
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          rosdep init
+          rosdep update --rosdistro jazzy
+          rosdep install --from-paths core ros --ignore-src -y --rosdistro jazzy
+      - name: Build libmiti and miti_bridge
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon build --merge-install --base-paths core ros \
+            --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS=-Werror
+      - name: Tests
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          export ROS_DOMAIN_ID=$((100 + RANDOM % 100)) ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+          colcon test --merge-install --base-paths core ros --event-handlers console_direct+
+          colcon test-result --verbose
+
   # RoboStack's Humble and Jazzy on Windows, built with MSVC like libmiti above. colcon prints each
   # package's whole output (console_cohesion+), since MSVC writes its errors to stdout. The
   # reference bridge's conformance run stays on Linux.
