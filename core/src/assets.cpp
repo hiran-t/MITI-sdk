@@ -45,6 +45,8 @@ Result fetch(const AssetOptions & options, const std::string & uri)
       return std::find(allowed.begin(), allowed.end(), lowercase(path.extension().string())) !=
              allowed.end();
     };
+  // The extension is checked on the URI as written, but the file system stops at the first NUL.
+  if (uri.find('\0') != std::string::npos) return not_allowed();
   std::error_code error;
   fs::path real;
   if (uri.rfind(PACKAGE, 0) == 0) {
