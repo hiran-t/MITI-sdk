@@ -110,7 +110,7 @@ jobs:
       - name: Conformance against the reference bridge
         run: |
           source /opt/ros/${{ matrix.distro }}/setup.bash
-          bash conformance/run.sh foxglove
+          bash conformance/run.sh reference
       - name: Generic service client prototype
         run: |
           source /opt/ros/${{ matrix.distro }}/setup.bash
