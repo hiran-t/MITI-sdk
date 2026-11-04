@@ -1,0 +1,2 @@
+Not a package to build or release: colcon, bloom and the ROS buildfarm skip this folder.
+Only libmiti (core/) and miti_bridge (ros/miti_bridge/) are packages.
