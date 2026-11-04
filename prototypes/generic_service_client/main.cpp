@@ -1,4 +1,4 @@
-// Prototype for phase 0 of docs/design.md: call a ROS 2 service of any type with a CDR request
+// Prototype for MITI's generic service calls: call a ROS 2 service of any type with a CDR request
 // and get the CDR response, using only what Humble provides. Humble's rclcpp has no
 // GenericClient and no service type-support helper (Jazzy has both), so this works on rcl:
 //

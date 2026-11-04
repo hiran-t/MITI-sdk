@@ -1,6 +1,6 @@
 # MITI SDK
 
-The robot side of [MITI](https://github.com/hiran-t/MITI). **miti_bridge** connects a ROS 2 robot to MITI and replaces foxglove_bridge. It is built on **libmiti**, a C++ library that any program can use to stream to MITI, with or without ROS.
+The robot side of [MITI](https://github.com/hiran-t/MITI). **miti_bridge** connects a ROS 2 robot to MITI. It is built on **libmiti**, a C++ library that any program can use to stream to MITI, with or without ROS.
 
 ## Install miti_bridge
 
@@ -75,18 +75,18 @@ If PowerShell refuses to run `local_setup.ps1`, allow your own scripts once with
 
 ## Status
 
-**Phase 3 is done.** libmiti, and miti_bridge on Humble and Jazzy, pass the conformance suite. MITI connects to miti_bridge from its release after 3.4.2, and has it send cameras as JPEG and reduce point clouds on the robot. Typed messages are next.
+libmiti, and miti_bridge on Humble and Jazzy, pass the conformance suite. MITI connects to miti_bridge from 3.4.3, and has it send cameras as JPEG and reduce point clouds on the robot. Typed messages are planned.
 
 Where to read more:
 
-- [docs/design.md](docs/design.md): goals, architecture, phases and decisions
+- [docs/design.md](docs/design.md): goals, architecture, measurements and decisions
 - [docs/protocol.md](docs/protocol.md): the MITI protocol, version 1 (`miti.bridge.v1`)
 - [conformance/](conformance/README.md): checks a server against the protocol, on a fixture ROS 2 graph
 - [core/](core/README.md): libmiti, the C++ core
 - [ros/miti_bridge/](ros/miti_bridge/README.md): the ROS 2 node, its parameters and how it works
 - [docs/releases.md](docs/releases.md): how releases and the apt repository are made
 - [prototypes/generic_service_client/](prototypes/generic_service_client/README.md): calling a service of any type on Humble, which miti_bridge needs
-- [bench/link/](bench/link/run.sh): how late TF and a camera arrive over a slow link (`tc netem`), with miti_bridge or foxglove_bridge
+- [bench/link/](bench/link/run.sh): how late TF and a camera arrive over a slow link (`tc netem`)
 
 | Part          | What it is                                                                                                        |
 | ------------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -102,7 +102,6 @@ Panels for MITI are built with the widget SDK, [MITI-widget-sdk](https://github.
 [pixi](https://pixi.sh) brings ROS 2, a C++ toolchain and Node.js, so no system ROS install is needed (Linux, macOS arm64 and Windows x64; on Windows, run the conformance tasks from Git Bash):
 
 ```bash
-pixi run -e humble conformance-foxglove   # the conformance suite against foxglove_bridge (-e jazzy too)
 pixi run -e humble service-prototype      # build the service-client prototype and call the fixture
 pixi run -e core test                     # build libmiti and run its tests (no ROS needed)
 pixi run -e core conformance-libmiti      # the conformance suite against libmiti's example server

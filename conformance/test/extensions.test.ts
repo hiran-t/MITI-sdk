@@ -1,6 +1,6 @@
 /**
  * The extensions (docs/protocol.md, "Extensions"), for servers that select miti.bridge.v1.
- * Skipped against servers that do not, such as foxglove_bridge.
+ * Skipped against servers that do not, such as the reference bridge.
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
@@ -157,7 +157,7 @@ describe('extensions', () => {
     });
 
     // Over a fast local connection nothing waits long enough to be replaced or reordered;
-    // libmiti's scheduler tests check these, and phase 3 checks them over a slowed link.
+    // libmiti's scheduler tests check these, and bench/link checks them over a slowed link.
     it.todo('latest delivery keeps only the newest waiting message');
     it.todo('high priority is sent before low');
   });

@@ -57,7 +57,7 @@ On Windows the same tasks build it with MSVC; Visual Studio 2022's C++ tools mus
 | `asset_roots`            | `[]`                                                    | Folders `file://` assets may come from. `package://` works for every installed package |
 | `use_sim_time`           | `false`                                                 | Send the robot's `/clock` to clients, and stamp messages with it                       |
 
-The parameter names are the ones foxglove_bridge uses, so MITI's launch scripts can pass the same settings.
+MITI's launch scripts pass these settings.
 
 ## How it works
 
@@ -76,6 +76,6 @@ The parameter names are the ones foxglove_bridge uses, so MITI's launch scripts 
 
 ## Not yet
 
-- MITI connects to miti_bridge from the MITI release after 3.4.2. Earlier versions offer only foxglove_bridge's subprotocols, which miti_bridge refuses.
+- MITI connects to miti_bridge from MITI 3.4.3. Earlier MITI versions cannot connect to it.
 - Each message is copied once on its way from ROS to the clients.
 - One executor thread serves subscriptions, service responses and the graph.

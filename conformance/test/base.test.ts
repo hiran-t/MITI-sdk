@@ -1,6 +1,6 @@
 /**
  * The base protocol (docs/protocol.md, "Base protocol"), against the fixture graph. Every server
- * MITI talks to must pass these: SDK servers, and foxglove_bridge until MITI drops it.
+ * MITI talks to must pass these: SDK servers and the reference bridge.
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
