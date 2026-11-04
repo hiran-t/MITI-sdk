@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <random>
+#include <utility>
 
 #include "assets.hpp"
 
@@ -115,6 +116,26 @@ TEST_F(Assets, RefusesUnknownPackagesSchemesAndExtensions)
   EXPECT_TRUE(refused("package://pkg"));
   EXPECT_TRUE(refused("http://example.com/part.stl"));
   EXPECT_TRUE(refused("package://pkg/meshes/notes.txt"));
+}
+
+TEST_F(Assets, RefusesUrisWithANul)
+{
+  // The extension is checked on the URI as written, but the file system stops at the first NUL:
+  // `notes.txt\0.stl` would pass as an .stl and serve notes.txt.
+  options.roots.push_back(root / "pkg");
+  const std::pair<const char *, std::string> uris[] = {
+    {"package", std::string("package://pkg/meshes/notes.txt") + '\0' + ".stl"},
+    {"file", "file://" + (root / "pkg/meshes/notes.txt").string() + '\0' + ".stl"},
+    // Refused before the file system is asked, so not "not found".
+    {"missing", std::string("package://pkg/meshes/missing.txt") + '\0' + ".stl"},
+  };
+  for (const auto & [name, uri] : uris) {
+    const auto result = fetch(options, uri);
+    EXPECT_FALSE(result.ok) << name;
+    EXPECT_TRUE(result.data.empty()) << name;
+    EXPECT_EQ(result.error.rfind("Asset URI not allowed: ", 0), 0u)
+      << name << ": " << result.error.c_str();
+  }
 }
 
 TEST_F(Assets, ReportsMissingAndOversizedFiles)

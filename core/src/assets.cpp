@@ -69,6 +69,8 @@ Result fetch(const AssetOptions & options, const std::string & uri)
   const auto allowed_extension = [&allowed](const fs::path & path) {
       return std::find(allowed.begin(), allowed.end(), extension(path)) != allowed.end();
     };
+  // The extension is checked on the URI as written, but the file system stops at the first NUL.
+  if (uri.find('\0') != std::string::npos) return not_allowed();
   std::error_code error;
   fs::path real;
   if (uri.rfind(PACKAGE, 0) == 0) {
