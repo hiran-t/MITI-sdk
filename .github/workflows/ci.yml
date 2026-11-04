@@ -64,6 +64,38 @@ jobs:
       - name: Conformance against libmiti's example server
         run: bash conformance/run.sh libmiti core/build/examples/conformance_server
 
+  # Windows: MSVC with conda-forge's Boost, nlohmann_json and TurboJPEG, from the pixi environment.
+  # CMAKE_COMPILE_WARNING_AS_ERROR is /WX, MSVC's -Werror. Git Bash runs the conformance suite.
+  libmiti-windows:
+    name: libmiti (Windows, MSVC)
+    runs-on: windows-2025
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: prefix-dev/setup-pixi@v0.11.2
+        with:
+          pixi-version: v0.62.2
+          environments: core
+          locked: true
+      - name: Build
+        run: |
+          pixi run -e core cmake -S core -B core/build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          pixi run -e core cmake --build core/build
+      - name: Tests
+        run: pixi run -e core ctest --test-dir core/build --output-on-failure
+      # A shared libmiti exports its symbols as it does with GCC and Clang.
+      - name: Shared library
+        run: |
+          pixi run -e core cmake -S core -B core/build-shared -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON -DBUILD_SHARED_LIBS=ON -DMITI_BUILD_TESTS=OFF
+          pixi run -e core cmake --build core/build-shared
+      - run: pixi run -e core install
+      - name: Conformance against libmiti's example server
+        run: pixi run -e core bash conformance/run.sh libmiti core/build/examples/conformance_server
+
   # The container sets the Ubuntu: Humble runs on 22.04 and Jazzy on 24.04, each on amd64 and arm64.
   ros:
     name: ${{ matrix.distro }} (Ubuntu ${{ matrix.distro == 'humble' && '22.04' || '24.04' }}, ${{ matrix.arch }})
@@ -115,3 +147,41 @@ jobs:
         run: |
           source /opt/ros/${{ matrix.distro }}/setup.bash
           bash prototypes/generic_service_client/run.sh
+
+  # RoboStack's Humble and Jazzy on Windows, built with MSVC like libmiti above. colcon prints each
+  # package's whole output (console_cohesion+), since MSVC writes its errors to stdout.
+  ros-windows:
+    name: ${{ matrix.distro }} (Windows, RoboStack)
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [humble, jazzy]
+    runs-on: windows-2025
+    defaults:
+      run:
+        shell: bash
+    env:
+      DISTRO: ${{ matrix.distro }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: prefix-dev/setup-pixi@v0.11.2
+        with:
+          pixi-version: v0.62.2
+          environments: ${{ matrix.distro }}
+          locked: true
+      - name: Build libmiti and miti_bridge
+        run: |
+          pixi run -e $DISTRO colcon --log-base log/$DISTRO build --merge-install --base-paths core ros \
+            --build-base build/$DISTRO --install-base install/$DISTRO \
+            --event-handlers console_cohesion+ \
+            --cmake-args -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+      - name: Tests
+        run: |
+          pixi run -e $DISTRO colcon --log-base log/$DISTRO test --merge-install --base-paths core ros \
+            --build-base build/$DISTRO --install-base install/$DISTRO --event-handlers console_direct+
+          pixi run -e $DISTRO colcon test-result --test-result-base build/$DISTRO --verbose
+      - run: pixi run -e $DISTRO install
+      - name: Conformance against miti_bridge
+        run: pixi run -e $DISTRO bash conformance/run.sh miti-bridge install/$DISTRO/lib/miti_bridge/miti_bridge
+      - name: Conformance against foxglove_bridge
+        run: pixi run -e $DISTRO bash conformance/run.sh foxglove
