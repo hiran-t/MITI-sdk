@@ -33,8 +33,9 @@ bool inside(const fs::path & path, const fs::path & base)
 std::string extension(const fs::path & path)
 {
   using Unsigned = std::make_unsigned_t<fs::path::value_type>;
+  const auto dotted = path.extension();
   std::string out;
-  for (const auto c : path.extension().native()) {
+  for (const auto c : dotted.native()) {
     const auto code = static_cast<Unsigned>(c);
     if (code > 127) return {};
     out += static_cast<char>(code >= 'A' && code <= 'Z' ? code - 'A' + 'a' : code);
