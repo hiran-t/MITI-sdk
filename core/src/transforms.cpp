@@ -247,7 +247,7 @@ Result reduce(const Transform & transform, const Bytes & input)
   }
   if (transform.stride > 1) {
     size_t to = 0;
-    for (size_t from = 0; from < points.size(); from += transform.stride) points[to++] = points[from];
+    for (size_t at = 0; at < points.size(); at += transform.stride) points[to++] = points[at];
     points.resize(to);
   }
   if (transform.max_points && points.size() > transform.max_points) {
