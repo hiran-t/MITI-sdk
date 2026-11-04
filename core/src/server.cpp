@@ -28,7 +28,11 @@ void ServerImpl::start()
 {
   const tcp::endpoint endpoint{net::ip::make_address(options.address), options.port};
   acceptor.open(endpoint.protocol());
+#ifndef _WIN32
+  // A restarted server can listen again while its old connections wait out TIME_WAIT. Windows
+  // allows that without SO_REUSEADDR, which there would let another server bind a port in use.
   acceptor.set_option(net::socket_base::reuse_address(true));
+#endif
   acceptor.bind(endpoint);
   acceptor.listen(net::socket_base::max_listen_connections);
   port = acceptor.local_endpoint().port();
@@ -169,8 +173,8 @@ void ServerImpl::remove_channel(uint32_t id)
   // Subscriptions to it end; they need no unsubscribe from the client.
   const auto list = subscribers.find(id);
   if (list != subscribers.end()) {
-    for (const auto & [session_id, subscription] : list->second) {
-      if (auto target = session(session_id)) target->channel_removed(id);
+    for (const auto & [subscriber, subscription] : list->second) {
+      if (auto target = session(subscriber)) target->channel_removed(id);
     }
     subscribers.erase(list);
     found->second->subscribers_ = 0;
@@ -193,8 +197,8 @@ void ServerImpl::dispatch(
   }
   const auto list = subscribers.find(channel);
   if (list == subscribers.end()) return;
-  for (const auto & [session_id, subscription] : list->second) {
-    if (auto target = session(session_id)) target->send_message(subscription, message, time);
+  for (const auto & [subscriber, subscription] : list->second) {
+    if (auto target = session(subscriber)) target->send_message(subscription, message, time);
   }
 }
 

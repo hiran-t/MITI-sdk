@@ -54,7 +54,8 @@ subscribes over DDS, so raw data still crosses the link before the bridge can re
    - The link fixes live in its core, so every program built on it gets them.
 4. **Platforms.**
    - `libmiti`: Linux (amd64, arm64 including Jetson), macOS and Windows.
-   - miti_bridge: Ubuntu 22.04/24.04 with Humble and Jazzy.
+   - miti_bridge: Ubuntu 22.04/24.04 with Humble and Jazzy, and Windows x64 with RoboStack's Humble
+     and Jazzy, built from source.
 
 Not in the first release:
 
@@ -373,9 +374,10 @@ MITI-sdk/
   - Checks every row of the base table and every extension.
   - Runs against a `libmiti` example server, and against miti_bridge on a fixture ROS graph.
 - **CI**
-  - libmiti on Ubuntu 22.04 and 24.04, each on amd64 and arm64, plus a sanitizer build.
+  - libmiti on Ubuntu 22.04 and 24.04, each on amd64 and arm64, plus a sanitizer build, and on
+    Windows x64 with MSVC.
   - miti_bridge in `ros:humble` and `ros:jazzy`, on amd64 and arm64 runners, and the .debs
-    installed in fresh containers.
+    installed in fresh containers; on Windows x64 with RoboStack, built from source.
 - **Load**
   - Three 1280×720 rgb8 cameras at 15 Hz, a 100k-point cloud at 10 Hz and TF at 100 Hz, as in
     `scripts/heavy-bridge.js`. Measured with `scripts/perf-run.js`.

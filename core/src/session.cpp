@@ -19,9 +19,11 @@ using protocol::StatusLevel;
 namespace
 {
 
+#ifdef TCP_NOTSENT_LOWAT
 /// The most a connection's socket holds unsent. A little keeps the link busy; more would hold
 /// frames where a newer one can no longer replace them.
 constexpr int NOTSENT_LOWAT = 128 * 1024;
+#endif
 
 /// `pkg/Type` → `pkg/msg/Type`, to compare type names written either way.
 std::string full_type(const std::string & type)
@@ -93,6 +95,9 @@ void Session::accepted()
   // megabytes on a slow link: there they could only arrive late.
   ::setsockopt(socket.native_handle(), IPPROTO_TCP, TCP_NOTSENT_LOWAT, &NOTSENT_LOWAT,
     sizeof(NOTSENT_LOWAT));
+#else
+  // Windows has no TCP_NOTSENT_LOWAT. There the send buffer follows the connection's ideal send
+  // backlog, about one bandwidth-delay product, unless SO_SNDBUF is set: it is left as it is.
 #endif
   // Pings keep an idle connection, such as a viewer that only receives, from timing out.
   websocket::stream_base::timeout timeout{};

@@ -18,7 +18,7 @@ echo "deb [signed-by=/usr/share/keyrings/miti-sdk.gpg] https://hiran-t.github.io
 sudo apt update && sudo apt install ros-$ROS_DISTRO-miti-bridge
 ```
 
-On another setup, [build it from source](#build-from-source). Once the API is stable, the package will also come from ROS's own apt repository, with no repository to add.
+On Windows, [build it with pixi](#windows). On another setup, [build it from source](#build-from-source). Once the API is stable, the package will also come from ROS's own apt repository, with no repository to add.
 
 ## Run
 
@@ -54,6 +54,25 @@ source install/setup.bash
 ros2 launch miti_bridge miti_start
 ```
 
+### Windows
+
+There is no package for Windows: miti_bridge is built from source with [pixi](https://pixi.sh), which brings ROS 2 Humble or Jazzy from [RoboStack](https://robostack.github.io) and the libraries libmiti needs. It needs [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) or its Build Tools, with the **Desktop development with C++** workload, and [Git](https://git-scm.com/downloads/win). In PowerShell:
+
+```powershell
+git clone https://github.com/hiran-t/MITI-sdk.git; cd MITI-sdk
+pixi run -e humble build-bridge   # into install\humble; -e jazzy for Jazzy
+```
+
+Then run it from that folder:
+
+```powershell
+pixi shell -e humble
+.\install\humble\local_setup.ps1
+ros2 launch miti_bridge miti_start
+```
+
+If PowerShell refuses to run `local_setup.ps1`, allow your own scripts once with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. When Windows asks whether miti_bridge may use the network, allow it on private networks for MITI on another machine to connect.
+
 ## Status
 
 libmiti, and miti_bridge on Humble and Jazzy, pass the conformance suite. MITI connects to miti_bridge from 3.4.3, and has it send cameras as JPEG and reduce point clouds on the robot. Typed messages are planned.
@@ -80,7 +99,7 @@ Panels for MITI are built with the widget SDK, [MITI-widget-sdk](https://github.
 
 ## Develop
 
-[pixi](https://pixi.sh) brings ROS 2, a C++ toolchain and Node.js, so no system ROS install is needed (Linux and macOS arm64):
+[pixi](https://pixi.sh) brings ROS 2, a C++ toolchain and Node.js, so no system ROS install is needed (Linux, macOS arm64 and Windows x64; on Windows, run the conformance tasks from Git Bash):
 
 ```bash
 pixi run -e humble service-prototype      # build the service-client prototype and call the fixture
@@ -96,6 +115,7 @@ CI (`.github/workflows/ci.yml`) runs the same, on every supported Ubuntu (22.04 
 
 - libmiti on each of the four, and once more with sanitizers.
 - The ROS checks in `ros:<distro>-ros-base` containers: Humble on 22.04, Jazzy on 24.04, each on both architectures.
+- On Windows x64, with MSVC and the pixi environments: libmiti, and miti_bridge on RoboStack's Humble and Jazzy.
 
 ## License
 

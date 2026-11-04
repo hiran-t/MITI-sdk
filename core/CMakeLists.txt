@@ -23,6 +23,13 @@ pkg_check_modules(TURBOJPEG REQUIRED IMPORTED_TARGET libturbojpeg)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+if(MSVC)
+  # For the library, its tests and examples: Beast's templates outgrow an object file's default
+  # section count, sources are UTF-8, and Asio targets Windows 10.
+  add_compile_options(/bigobj /utf-8)
+  add_compile_definitions(_WIN32_WINNT=0x0A00)
+endif()
+
 add_library(miti
   src/assets.cpp
   src/protocol.cpp
@@ -47,7 +54,11 @@ if(NOT BUILD_SHARED_LIBS)
   target_link_libraries(miti INTERFACE $<INSTALL_INTERFACE:${TURBOJPEG_LINK_LIBRARIES}>)
 endif()
 target_compile_definitions(miti PRIVATE MITI_VERSION="${PROJECT_VERSION}")
-target_compile_options(miti PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra>)
+target_compile_options(miti PRIVATE
+  $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra>
+  $<$<CXX_COMPILER_ID:MSVC>:/W4>)
+# GCC and Clang export every symbol of a shared libmiti (no -fvisibility=hidden); so does MSVC.
+set_target_properties(miti PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # find_package(libmiti) then link miti::miti.
 install(TARGETS miti EXPORT libmitiTargets

@@ -30,10 +30,10 @@ status->log(cdr_bytes, receive_time_ns);  // to every subscriber, shared, not co
 
 Checked:
 
-- **gtest:** 52 tests of the scheduler, the wire format, asset paths, the transforms, and the server over a real WebSocket.
-- **Conformance:** the suite passes against the example server, 33 checks. miti_bridge, built on libmiti, passes it on Humble and Jazzy.
+- **gtest:** 54 tests of the scheduler, the wire format, asset paths, the transforms, and the server over a real WebSocket; on Windows 57, with its path rules.
+- **Conformance:** the suite passes against the example server, 33 checks, on Ubuntu and Windows. miti_bridge, built on libmiti, passes it on Humble and Jazzy.
 - **Sanitizers:** clean under AddressSanitizer with UndefinedBehaviorSanitizer, and under ThreadSanitizer.
-- **Toolchains:** builds without warnings, from Ubuntu 22.04 (GCC 11, Boost 1.74) to macOS (Clang, Boost 1.92). CI builds and checks it on Ubuntu 22.04 and 24.04, each on amd64 and arm64.
+- **Toolchains:** builds without warnings, from Ubuntu 22.04 (GCC 11, Boost 1.74) to macOS (Clang, Boost 1.92) and Windows (MSVC at `/W4`, Boost 1.92). CI builds and checks it on Ubuntu 22.04 and 24.04, each on amd64 and arm64, and on Windows x64.
 
 ## How it runs
 
@@ -46,7 +46,7 @@ Checked:
 
 **Sending.**
 
-- Each connection writes one frame at a time. Messages wait in its scheduler, where a newer one can still replace them, and not in the socket: the socket holds at most 128 KB unsent (`TCP_NOTSENT_LOWAT`, on Linux and macOS), and sends small messages at once (`TCP_NODELAY`).
+- Each connection writes one frame at a time. Messages wait in its scheduler, where a newer one can still replace them, and not in the socket: the socket holds at most 128 KB unsent (`TCP_NOTSENT_LOWAT`, on Linux and macOS), and sends small messages at once (`TCP_NODELAY`). Windows has no `TCP_NOTSENT_LOWAT`; there the send buffer follows the connection's ideal send backlog, about one bandwidth-delay product.
 - A message's bytes are shared by every subscriber. Each connection writes only its own 13-byte header in front of them.
 
 **Assets.**
@@ -55,6 +55,7 @@ Checked:
 - `..` cannot lead out of a package or a root.
 - Inside a package, symlinks are followed: `colcon build --symlink-install` installs every file as a link into the source tree. A root's files must really be inside it: there, symlinks are resolved before the check.
 - Only allowed extensions are served, up to a size limit.
+- On Windows, `file:///C:/dir/a.stl` names `C:\dir\a.stl`. A path whose root is not a drive, such as `\\host\share`, is refused before it is looked up, since looking would reach out to that host. A file's 8.3 short name, such as `MODEL~1.STL` for `model.stl_old`, does not make it an asset: its long name must have an allowed extension too.
 - A URI with a NUL character is refused: the file system would stop at it, after the extension check.
 
 ## Build
@@ -65,6 +66,8 @@ With pixi, from the repository root (the environment brings CMake, a compiler, B
 pixi run -e core test                  # build, then run the gtests
 pixi run -e core conformance-libmiti   # the conformance suite against the example server
 ```
+
+On Windows the same tasks build with MSVC from the pixi environment; Visual Studio 2022's C++ tools must be installed. Run `conformance-libmiti` from Git Bash.
 
 Without pixi, install CMake, Ninja, pkg-config, a C++17 compiler, Boost 1.74 or newer, nlohmann/json 3.10 or newer, TurboJPEG and GoogleTest. On Ubuntu that is `cmake ninja-build pkg-config g++ libboost-dev nlohmann-json3-dev libturbojpeg0-dev libgtest-dev`. Then:
 

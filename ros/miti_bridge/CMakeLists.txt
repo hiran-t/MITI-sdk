@@ -3,6 +3,9 @@ project(miti_bridge CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(MSVC)
+  add_compile_options(/utf-8)
+endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(libmiti 0.1 REQUIRED)
@@ -18,7 +21,9 @@ add_library(miti_bridge_core STATIC
   src/definitions.cpp
   src/generic_client.cpp)
 target_include_directories(miti_bridge_core PUBLIC src)
-target_compile_options(miti_bridge_core PRIVATE -Wall -Wextra)
+target_compile_options(miti_bridge_core PRIVATE
+  $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra>
+  $<$<CXX_COMPILER_ID:MSVC>:/W4>)
 target_link_libraries(miti_bridge_core PUBLIC
   miti::miti
   rclcpp::rclcpp

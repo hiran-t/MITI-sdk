@@ -155,6 +155,28 @@ TEST(Server, RefusesClientsThatDoNotOfferTheMitiSubprotocol)
   EXPECT_EQ(accepted.next("serverInfo")["name"], "libmiti");
 }
 
+TEST(Server, RefusesAPortAnotherServerListensOn)
+{
+  const auto server = miti::Server::create(local());
+  auto options = local();
+  options.port = server->port();
+  EXPECT_THROW(miti::Server::create(options), std::runtime_error);
+}
+
+TEST(Server, ListensAgainOnThePortOfAServerJustStopped)
+{
+  // The stopped server closed its connection first, which then waits out TIME_WAIT on that port.
+  auto options = local();
+  {
+    const auto server = miti::Server::create(local());
+    options.port = server->port();
+    Client client(options.port);
+    client.next("serverInfo");
+    server->stop();
+  }
+  EXPECT_NO_THROW(miti::Server::create(options));
+}
+
 TEST(Server, SendsServerInfoThenItsChannels)
 {
   auto options = local();
