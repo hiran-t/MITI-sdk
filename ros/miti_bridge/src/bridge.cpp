@@ -1,10 +1,10 @@
 #include "bridge.hpp"
 
 #include <algorithm>
-#include <cstdlib>
 #include <optional>
 
 #include <ament_index_cpp/get_resources.hpp>
+#include <rcpputils/env.hpp>
 
 namespace miti_bridge
 {
@@ -112,7 +112,7 @@ Bridge::Bridge(rclcpp::Node::SharedPtr node)
   options.name = "miti_bridge";
   options.address = n.declare_parameter("address", std::string("0.0.0.0"));
   options.port = static_cast<uint16_t>(n.declare_parameter("port", 8765));
-  options.metadata["ROS_DISTRO"] = std::getenv("ROS_DISTRO") ? std::getenv("ROS_DISTRO") : "";
+  options.metadata["ROS_DISTRO"] = rcpputils::get_env_var("ROS_DISTRO");
   options.on_subscribe = [this](const miti::Channel & channel) {subscribe(channel);};
   options.on_unsubscribe = [this](const miti::Channel & channel) {unsubscribe(channel);};
   if (has("clientPublish")) {
