@@ -82,7 +82,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - name: Install build tools, libraries and foxglove_bridge
+      - name: Install build tools, libraries and the reference bridge
         run: |
           apt-get update
           apt-get install -y --no-install-recommends ninja-build pkg-config \
@@ -106,8 +106,8 @@ jobs:
         run: |
           source /opt/ros/${{ matrix.distro }}/setup.bash
           bash conformance/run.sh miti-bridge install/lib/miti_bridge/miti_bridge
-      # The reference for the base protocol: the suite must pass against foxglove_bridge.
-      - name: Conformance against foxglove_bridge
+      # The reference for the base protocol: the suite must pass against the reference bridge.
+      - name: Conformance against the reference bridge
         run: |
           source /opt/ros/${{ matrix.distro }}/setup.bash
           bash conformance/run.sh foxglove

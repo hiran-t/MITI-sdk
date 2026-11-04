@@ -5,7 +5,7 @@
 #   conformance/run.sh miti-bridge install/humble/lib/miti_bridge/miti_bridge
 #       miti_bridge beside the fixture graph
 #   conformance/run.sh foxglove
-#       foxglove_bridge beside the fixture graph, the reference for the base protocol
+#       the reference bridge beside the fixture graph, for the base protocol
 #   conformance/run.sh url ws://HOST:PORT
 #       a server already running, with the fixture graph started here
 # Needs Node.js 22.18+ with `npm ci` done in conformance/. The ROS modes also need ROS 2 (a pixi

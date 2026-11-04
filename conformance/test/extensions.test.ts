@@ -1,6 +1,6 @@
 /**
  * The extensions (docs/protocol.md, "Extensions"), for servers that select miti.bridge.v1.
- * Skipped against servers that do not, such as foxglove_bridge.
+ * Skipped against servers that do not, such as the reference bridge.
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
