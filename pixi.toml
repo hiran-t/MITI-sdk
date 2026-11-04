@@ -1,6 +1,6 @@
 # Development environments for the MITI SDK, without a system ROS install:
-#   pixi run -e humble conformance-foxglove   the conformance suite against foxglove_bridge
-#   pixi run -e jazzy conformance-foxglove    the same on Jazzy
+#   pixi run -e humble conformance-reference  the conformance suite against the reference bridge
+#   pixi run -e jazzy conformance-reference   the same on Jazzy
 #   pixi run -e humble service-prototype      build and try the generic service client prototype
 #   pixi run -e core test                     build libmiti and run its tests (no ROS needed)
 #   pixi run -e core conformance-libmiti      the conformance suite against libmiti's example server
@@ -38,7 +38,7 @@ build = { cmd = "cmake --build core/build", depends-on = ["configure"], descript
 test = { cmd = "ctest --test-dir core/build --output-on-failure", depends-on = ["build"], description = "Run libmiti's tests" }
 conformance-libmiti = { cmd = "bash conformance/run.sh libmiti core/build/examples/conformance_server", depends-on = ["build", "install"], description = "Run the conformance suite against libmiti's example server" }
 
-# ROS 2 for the fixture graph (rclpy), the reference server (foxglove_bridge) and miti_bridge.
+# ROS 2 for the fixture graph (rclpy), the reference bridge and miti_bridge.
 [feature.ros.dependencies]
 colcon-common-extensions = "*"
 
@@ -47,7 +47,7 @@ colcon-common-extensions = "*"
 build-bridge = { cmd = "colcon --log-base log/$ROS_DISTRO build --merge-install --base-paths core ros --build-base build/$ROS_DISTRO --install-base install/$ROS_DISTRO --cmake-args -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo", description = "Build libmiti and miti_bridge with colcon" }
 test-bridge = { cmd = "colcon --log-base log/$ROS_DISTRO test --merge-install --base-paths core ros --build-base build/$ROS_DISTRO --install-base install/$ROS_DISTRO --event-handlers console_direct+ && colcon --log-base log/$ROS_DISTRO test-result --test-result-base build/$ROS_DISTRO", depends-on = ["build-bridge"], description = "Run the tests of libmiti and miti_bridge" }
 conformance-bridge = { cmd = "bash conformance/run.sh miti-bridge install/$ROS_DISTRO/lib/miti_bridge/miti_bridge", depends-on = ["build-bridge", "install"], description = "Run the conformance suite against miti_bridge and the fixture graph" }
-conformance-foxglove = { cmd = "bash conformance/run.sh foxglove", depends-on = ["install"], description = "Run the conformance suite against foxglove_bridge and the fixture graph" }
+conformance-reference = { cmd = "bash conformance/run.sh reference", depends-on = ["install"], description = "Run the conformance suite against the reference bridge and the fixture graph" }
 fixture = { cmd = "bash conformance/fixture/run-fixture.sh", description = "Start the fixture graph on its own" }
 service-prototype = { cmd = "bash prototypes/generic_service_client/run.sh", description = "Build the generic service client prototype and call the fixture's service" }
 

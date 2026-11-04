@@ -4,8 +4,8 @@
 #       libmiti's example server, which offers what the fixture graph offers; needs no ROS
 #   conformance/run.sh miti-bridge install/humble/lib/miti_bridge/miti_bridge
 #       miti_bridge beside the fixture graph
-#   conformance/run.sh foxglove
-#       foxglove_bridge beside the fixture graph, the reference for the base protocol
+#   conformance/run.sh reference
+#       the reference bridge beside the fixture graph, for the base protocol
 #   conformance/run.sh url ws://HOST:PORT
 #       a server already running, with the fixture graph started here
 # Needs Node.js 22.18+ with `npm ci` done in conformance/. The ROS modes also need ROS 2 (a pixi
@@ -17,7 +17,7 @@
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-server="${1:-foxglove}"
+server="${1:-reference}"
 port="${CONFORMANCE_PORT:-18765}"
 
 pids=()
@@ -56,13 +56,13 @@ case "$server" in
     pids+=($!)
     url="ws://127.0.0.1:$port"
     ;;
-  foxglove)
+  reference)
     start_fixture
     bridge=""
     for prefix in ${AMENT_PREFIX_PATH//:/ }; do
       [ -x "$prefix/lib/foxglove_bridge/foxglove_bridge" ] && bridge="$prefix/lib/foxglove_bridge/foxglove_bridge" && break
     done
-    [ -n "$bridge" ] || { echo "foxglove_bridge not found on AMENT_PREFIX_PATH" >&2; exit 1; }
+    [ -n "$bridge" ] || { echo "The reference bridge is not on AMENT_PREFIX_PATH: run through pixi" >&2; exit 1; }
     "$bridge" --ros-args -p port:="$port" -p address:=127.0.0.1 -p use_sim_time:=true \
       --log-level foxglove_bridge:=warn &
     pids+=($!)
@@ -73,7 +73,7 @@ case "$server" in
     start_fixture
     ;;
   *)
-    echo "Unknown server $server: use libmiti, miti-bridge, foxglove, or url" >&2
+    echo "Unknown server $server: use libmiti, miti-bridge, reference, or url" >&2
     exit 2
     ;;
 esac

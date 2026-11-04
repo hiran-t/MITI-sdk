@@ -3,7 +3,7 @@
  * they arrive (arrival time minus the header stamp; the robot stamps with the same clock).
  *   node bench/link/measure.mts <url> raw|jpeg [camera fps] [seconds]
  * The camera is asked for at most `camera fps` (15, as MITI's Image panel by default; 0 for every
- * frame). foxglove_bridge cannot limit it, and sends every frame.
+ * frame). The reference bridge sends every frame.
  */
 import { SUBPROTOCOLS, parseBinary, type MessageData } from '../../conformance/src/protocol.ts';
 import { readCompressedImage, readImage, readTFMessage } from '../../conformance/src/cdr.ts';

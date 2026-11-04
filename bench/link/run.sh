@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# The link benchmark (docs/design.md, phase 3b): a robot publishing a raw 1280x720 camera at 30 Hz
+# The link benchmark (docs/design.md, "The link, measured"): a robot publishing a raw 1280x720 camera at 30 Hz
 # and TF at 50 Hz, its bridge behind a 20 Mbit/s link with 30 ms of delay (tc netem on the robot's
 # side), and a client that reports how late TF and camera frames arrive.
-#   bench/link/run.sh miti-jpeg|miti-raw|foxglove [camera fps] [seconds]
+#   bench/link/run.sh miti-jpeg|miti-raw|reference [camera fps] [seconds]
 # The client asks miti_bridge for at most `camera fps` (default 15, as MITI's Image panel; 0 for
 # every frame).
 # LINK sets the netem link instead (`LINK=none` for none).
@@ -10,7 +10,7 @@
 # (packaging/build-debs.sh). The client is Node.js 22.18+ in Docker.
 set -euo pipefail
 
-mode="${1:?miti-jpeg, miti-raw or foxglove}"
+mode="${1:?miti-jpeg, miti-raw or reference}"
 fps="${2:-15}"
 seconds="${3:-20}"
 link="${LINK:-rate 20mbit delay 30ms}"
@@ -24,7 +24,7 @@ case "$mode" in
     packages="/src/dist/ros-humble-miti-bridge_*.deb"
     bridge="ros2 run miti_bridge miti_bridge"
     ;;
-  foxglove)
+  reference)
     packages="ros-humble-foxglove-bridge"
     bridge="ros2 run foxglove_bridge foxglove_bridge"
     ;;
