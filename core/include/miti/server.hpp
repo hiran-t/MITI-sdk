@@ -144,7 +144,8 @@ struct AssetOptions
   /// symlinks inside it are followed, as `colcon build --symlink-install` installs every file as
   /// one.
   std::map<std::string, std::filesystem::path> packages;
-  /// `file:///path` is served when the file, symlinks resolved, is inside one of these.
+  /// `file:///path` is served when the file, symlinks resolved, is inside one of these. On Windows
+  /// it is `file:///C:/path`; paths that are not on a drive are refused.
   std::vector<std::filesystem::path> roots;
   /// Lowercase, with the dot.
   std::vector<std::string> extensions{

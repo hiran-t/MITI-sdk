@@ -95,9 +95,10 @@ void Session::accepted()
   // megabytes on a slow link: there they could only arrive late.
   ::setsockopt(socket.native_handle(), IPPROTO_TCP, TCP_NOTSENT_LOWAT, &NOTSENT_LOWAT,
     sizeof(NOTSENT_LOWAT));
-#endif
+#else
   // Windows has no TCP_NOTSENT_LOWAT. There the send buffer follows the connection's ideal send
   // backlog, about one bandwidth-delay product, unless SO_SNDBUF is set: it is left as it is.
+#endif
   // Pings keep an idle connection, such as a viewer that only receives, from timing out.
   websocket::stream_base::timeout timeout{};
   timeout.handshake_timeout = std::chrono::seconds(30);

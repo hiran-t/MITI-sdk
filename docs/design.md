@@ -61,7 +61,8 @@ core (`libfoxglove`). We take the same shape for the same reasons:
    - The link fixes live in its core, so every program built on it gets them.
 4. **Platforms.**
    - `libmiti`: Linux (amd64, arm64 including Jetson), macOS and Windows.
-   - miti_bridge: Ubuntu 22.04/24.04 with Humble and Jazzy.
+   - miti_bridge: Ubuntu 22.04/24.04 with Humble and Jazzy, and Windows x64 with RoboStack's Humble
+     and Jazzy, built from source.
 
 Not in the first release:
 
@@ -410,7 +411,8 @@ When the robots run miti_bridge, a major MITI release removes the rest of foxglo
     base has to behave the same on each.
 - **CI**
   - Core and Python on Linux, macOS and Windows.
-  - miti_bridge in `ros:humble` and `ros:jazzy`, on amd64 and arm64 runners.
+  - miti_bridge in `ros:humble` and `ros:jazzy`, on amd64 and arm64 runners, and on Windows with
+    RoboStack.
 - **Load**
   - Three 1280×720 rgb8 cameras at 15 Hz, a 100k-point cloud at 10 Hz and TF at 100 Hz, as in
     `scripts/heavy-bridge.js`. Measured with `scripts/perf-run.js`.
@@ -563,6 +565,31 @@ Both targets are met: TF p95 is under 150 ms with the camera streaming, and the 
   later work.
 - **Unshaped,** the raw camera arrives at 29.7 fps (83 MB/s), and TF's p95 is 7 ms. The socket
   limit costs no throughput.
+
+**Progress: Windows (issue #1). libmiti and miti_bridge build and run on Windows x64.**
+
+- **How it builds:** from source with pixi. MSVC comes through conda-forge's `vs2022_win-64`,
+  which uses the Visual Studio 2022 C++ tools on the machine; Boost, nlohmann_json and TurboJPEG
+  from conda-forge; Humble and Jazzy from RoboStack, which has every package the bridge, the
+  fixture graph and foxglove_bridge need. There is no package for Windows.
+- **What Windows needed:**
+  - **Warnings.** `/W4` with warnings as errors, as `-Wall -Wextra -Werror` elsewhere. A shared
+    libmiti exports every symbol, as it does with GCC and Clang.
+  - **Sockets.** `TCP_NODELAY` as elsewhere. Windows has no `TCP_NOTSENT_LOWAT`; its send buffer
+    follows the connection's ideal send backlog. `SO_REUSEADDR` is set only off Windows: there
+    it would let a second server bind a port in use, and a stopped server's port is free again
+    without it.
+  - **Assets.** `file:///C:/…` names a file on a drive. A path whose root is not a drive
+    (`\\host\share`) is refused before any lookup, which would reach out to that host. A file's
+    8.3 short name does not make it an asset.
+  - **Conformance suite.** It runs from Git Bash.
+- **Checked in CI on Windows:** 56 gtests, a shared build, and the conformance suite against the
+  example server (33). On Humble and Jazzy: colcon tests, the launch file, the suite against
+  miti_bridge (33) and against foxglove_bridge (the 19 base checks).
+- **Not checked:** a Windows PC other than GitHub's runners, and a slow link: `bench/link` needs
+  `tc netem`, which is Linux only.
+- **In MITI, after a release:** the bridge beside MITI on Windows becomes miti_bridge, built from
+  source like on Linux and macOS, instead of foxglove_bridge.
 
 Phase 4 is next: typed messages and the Python binding.
 

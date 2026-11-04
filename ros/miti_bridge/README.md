@@ -1,10 +1,10 @@
 # miti_bridge
 
-A ROS 2 node that serves the robot's topics, services, parameters and package files to MITI over [the MITI protocol](../../docs/protocol.md). It is built on [libmiti](../../core/README.md), and replaces foxglove_bridge for MITI. Supported: Humble and Jazzy.
+A ROS 2 node that serves the robot's topics, services, parameters and package files to MITI over [the MITI protocol](../../docs/protocol.md). It is built on [libmiti](../../core/README.md), and replaces foxglove_bridge for MITI. Supported: Humble and Jazzy, on Ubuntu and on Windows (built from source with pixi and RoboStack).
 
 ## Install
 
-Install it from this repository's apt repository, or build it from source: both are described up front in the [repository's README](../../README.md#install-miti_bridge), since the package is not in ROS's apt repository yet.
+Install it from this repository's apt repository, or build it from source: both are described up front in the [repository's README](../../README.md#install-miti_bridge), since the package is not in ROS's apt repository yet. On Windows there is no package: [build it with pixi](../../README.md#windows).
 
 ## Run
 
@@ -40,6 +40,8 @@ pixi run -e humble test-bridge          # the tests of libmiti and miti_bridge
 pixi run -e humble conformance-bridge   # the conformance suite against it, with the fixture graph
 ```
 
+On Windows the same tasks build it with MSVC; Visual Studio 2022's C++ tools must be installed. Run `conformance-bridge` from Git Bash. Then `install\humble\local_setup.ps1` in a `pixi shell -e humble` makes `ros2 launch miti_bridge miti_start` find it.
+
 ## Parameters
 
 | Parameter                | Default                                                 | What it does                                                                           |
@@ -70,7 +72,7 @@ The parameter names are the ones foxglove_bridge uses, so MITI's launch scripts 
   - Calls go through a generic client: an `rclcpp::ClientBase` initialized with type support looked up by name, with requests and responses deserialized and serialized through the introspection type support. Humble has no `GenericClient`, so this one is used on both distros. Responses arrive through the executor.
   - A call fails after 10 s without a response.
 - **Parameters.** `/node.parameter` is read with that node's parameter service. A node that does not answer within 5 s counts as having none.
-- **Assets.** `package://` resolves against every package in the ament index.
+- **Assets.** `package://` resolves against every package in the ament index. On Windows, `file:///C:/dir/mesh.stl` names a file on a drive; network paths such as `\\host\share` are refused.
 
 ## Not yet
 

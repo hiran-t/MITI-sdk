@@ -25,6 +25,8 @@ pixi run -e jazzy conformance-foxglove
 pixi run -e humble conformance-bridge
 ```
 
+On Windows, run these from Git Bash: `run.sh` is a bash script.
+
 Without pixi, run `npm ci` in `conformance/` first, then (the ROS modes with ROS 2 sourced from `/opt/ros`):
 
 ```bash
@@ -58,12 +60,12 @@ bash conformance/run.sh url ws://127.0.0.1:8765
 
 ## Results
 
-libmiti's example server (`core/examples/conformance_server`) and miti_bridge (Humble and Jazzy) pass every check: 33. One is skipped: it applies only to a server without `miti.transforms`. Two are to-dos, `latest` delivery and priorities, which a fast local connection cannot show; libmiti's scheduler tests check them, and `bench/link` over a slowed link.
+libmiti's example server (`core/examples/conformance_server`) and miti_bridge (Humble and Jazzy) pass every check, on Ubuntu and on Windows: 33. One is skipped: it applies only to a server without `miti.transforms`. Two are to-dos, `latest` delivery and priorities, which a fast local connection cannot show; libmiti's scheduler tests check them, and `bench/link` over a slowed link.
 
 foxglove_bridge 3.6 passes every base check on Humble and Jazzy: 19 pass, and the 15 extension checks are skipped.
 
 - **Locally:** pixi on macOS arm64.
-- **CI:** `ros:<distro>-ros-base` on amd64 and arm64, with the bridge from apt (3.6.0).
+- **CI:** `ros:<distro>-ros-base` on amd64 and arm64, with the bridge from apt (3.6.0), and Windows x64 with RoboStack's (3.6.0).
 
 Things this confirmed about foxglove_bridge, which docs/protocol.md now requires of every server:
 
