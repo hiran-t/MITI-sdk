@@ -9,7 +9,7 @@
 #   conformance/run.sh url ws://HOST:PORT
 #       a server already running, with the fixture graph started here
 # Needs Node.js 22.18+ with `npm ci` done in conformance/. The ROS modes also need ROS 2 (a pixi
-# environment, or /opt/ros sourced) and python3 with rclpy.
+# environment, or /opt/ros sourced) and python3 with rclpy. On Windows, run it from Git Bash.
 #
 # The fixture graph runs on its own ROS_DOMAIN_ID and on this machine only, so other robots on the
 # network neither disturb it nor see it. Settings: ROS_DOMAIN_ID, RMW_IMPLEMENTATION,
@@ -19,6 +19,18 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 server="${1:-foxglove}"
 port="${CONFORMANCE_PORT:-18765}"
+
+# Windows (Git Bash): ROS takes Windows paths separated by ";", and conda's Python is python.exe.
+python=python3
+separator=:
+native() { printf '%s' "$1"; }
+case "$(uname -s)" in
+  MINGW* | MSYS* | CYGWIN*)
+    python=python
+    separator=';'
+    native() { cygpath -w "$1"; }
+    ;;
+esac
 
 pids=()
 cleanup() {
@@ -36,8 +48,10 @@ start_fixture() {
     export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
   fi
   # The fixture's package (its mesh) is found through the ament index, by the server too.
-  export AMENT_PREFIX_PATH="$here/fixture${AMENT_PREFIX_PATH:+:$AMENT_PREFIX_PATH}"
-  python3 "$here/fixture/fixture_node.py" &
+  local fixture
+  fixture="$(native "$here/fixture")"
+  export AMENT_PREFIX_PATH="$fixture${AMENT_PREFIX_PATH:+$separator$AMENT_PREFIX_PATH}"
+  "$python" "$here/fixture/fixture_node.py" &
   pids+=($!)
   echo "Fixture graph: ROS_DOMAIN_ID=$ROS_DOMAIN_ID, ${ROS_DISTRO:-ROS} with $RMW_IMPLEMENTATION"
 }
@@ -59,8 +73,11 @@ case "$server" in
   foxglove)
     start_fixture
     bridge=""
-    for prefix in ${AMENT_PREFIX_PATH//:/ }; do
-      [ -x "$prefix/lib/foxglove_bridge/foxglove_bridge" ] && bridge="$prefix/lib/foxglove_bridge/foxglove_bridge" && break
+    IFS="$separator" read -r -a prefixes <<< "$AMENT_PREFIX_PATH"
+    for prefix in "${prefixes[@]}"; do
+      for candidate in "$prefix/lib/foxglove_bridge/foxglove_bridge"{,.exe}; do
+        [ -f "$candidate" ] && [ -x "$candidate" ] && bridge="$candidate" && break 2
+      done
     done
     [ -n "$bridge" ] || { echo "foxglove_bridge not found on AMENT_PREFIX_PATH" >&2; exit 1; }
     "$bridge" --ros-args -p port:="$port" -p address:=127.0.0.1 -p use_sim_time:=true \
