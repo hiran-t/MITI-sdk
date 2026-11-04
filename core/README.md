@@ -17,11 +17,11 @@ status->log(cdr_bytes, receive_time_ns);  // to every subscriber, shared, not co
 
 [`examples/conformance_server.cpp`](examples/conformance_server.cpp) uses everything libmiti offers. It is a server that offers what the conformance fixture graph offers, without ROS, so the conformance suite checks libmiti against it.
 
-## Status: phases 1 to 3 of [the design](../docs/design.md)
+## Status, against [the design](../docs/design.md)
 
 | Done                                                                                                                                                       | Not yet                       |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| The base protocol: channels, latched channels, subscriptions, client publishing (CDR), services, parameters, assets (read off the server's thread), time   | Typed messages: phase 4       |
+| The base protocol: channels, latched channels, subscriptions, client publishing (CDR), services, parameters, assets (read off the server's thread), time   | Typed messages: planned       |
 | `miti.subscriptionOptions`: `maxRate`, `delivery`, `priority` and `transform`, with `miti.subscriptionFormat`                                              | TLS and authentication: later |
 | Transforms: `jpeg` (TurboJPEG) and `reduce` (point clouds)                                                                                                 |                               |
 | `miti.getSchema` (the `get_schema` callback) and `miti.stats`                                                                                              |                               |

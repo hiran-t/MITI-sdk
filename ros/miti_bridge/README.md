@@ -1,6 +1,6 @@
 # miti_bridge
 
-A ROS 2 node that serves the robot's topics, services, parameters and package files to MITI over [the MITI protocol](../../docs/protocol.md). It is built on [libmiti](../../core/README.md), and replaces foxglove_bridge for MITI. Supported: Humble and Jazzy.
+A ROS 2 node that serves the robot's topics, services, parameters and package files to MITI over [the MITI protocol](../../docs/protocol.md). It is built on [libmiti](../../core/README.md). Supported: Humble and Jazzy.
 
 ## Install
 
@@ -55,7 +55,7 @@ pixi run -e humble conformance-bridge   # the conformance suite against it, with
 | `asset_roots`            | `[]`                                                    | Folders `file://` assets may come from. `package://` works for every installed package |
 | `use_sim_time`           | `false`                                                 | Send the robot's `/clock` to clients, and stamp messages with it                       |
 
-The parameter names are the ones foxglove_bridge uses, so MITI's launch scripts can pass the same settings.
+MITI's launch scripts pass these settings.
 
 ## How it works
 
@@ -74,6 +74,6 @@ The parameter names are the ones foxglove_bridge uses, so MITI's launch scripts 
 
 ## Not yet
 
-- MITI connects to miti_bridge from the MITI release after 3.4.2. Earlier versions offer only foxglove_bridge's subprotocols, which miti_bridge refuses.
+- MITI connects to miti_bridge from MITI 3.4.3. Earlier MITI versions cannot connect to it.
 - Each message is copied once on its way from ROS to the clients.
 - One executor thread serves subscriptions, service responses and the graph.
