@@ -5,10 +5,8 @@ Status: draft, 2026-11-02.
 This document describes how MITI talks to a robot over WebSocket, with the subprotocol
 `miti.bridge.v1`. It has two parts:
 
-- **The base protocol** carries topics, services, parameters, assets and time. Its JSON and binary
-  framing is the same as the part of the Foxglove WebSocket protocol v1 that MITI uses. That way,
-  while some robots still run foxglove_bridge, MITI reads both kinds of robot through one code
-  path.
+- **The base protocol** carries topics, services, parameters, assets and time, with JSON text
+  frames and binary data frames.
 - **The extensions** are operations of MITI's own, for flow control and transforms.
 
 `libmiti`, and so miti_bridge, implement both. The conformance suite in `conformance/`
@@ -32,11 +30,6 @@ The key words MUST, SHOULD and MAY are used as in RFC 2119.
 
 A server conforming to this document accepts the subprotocol `miti.bridge.v1`, and no other. It
 refuses a handshake that does not offer it.
-
-Until MITI drops foxglove_bridge, MITI offers `miti.bridge.v1`, `foxglove.sdk.v1` and
-`foxglove.websocket.v1`, in that order. When foxglove_bridge selects one of its own subprotocols,
-MITI uses only the base protocol and sends no extension operations. Its JSON publishing on that
-path is described in foxglove_bridge's documentation, not here.
 
 Right after the handshake, the server sends, in this order:
 
@@ -148,9 +141,7 @@ end, and no more messages arrive for them.
 }
 ```
 
-Servers MUST send `request` and `response`. While MITI still supports foxglove_bridge, it also
-reads the older fields `requestSchema` and `responseSchema`, which foxglove_bridge may send
-instead.
+Servers MUST send `request` and `response`.
 
 **`unadvertiseServices`**: `{ "op": "unadvertiseServices", "serviceIds": [1] }`.
 
@@ -259,12 +250,12 @@ How the client sends it:
 - Fields that are not given keep their current value.
 - Until the first one arrives, the server uses the defaults below.
 
-| Message types                                                                                                                                                                                                                                                                           | Default                                                                   |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `tf2_msgs/msg/TFMessage`, `sensor_msgs/msg/JointState`, `nav_msgs/msg/Odometry`                                                                                                                                                                                                         | `high`, `all`                                                             |
-| `sensor_msgs/msg/Image`, `sensor_msgs/msg/CompressedImage`, `sensor_msgs/msg/PointCloud2`, `nav_msgs/msg/OccupancyGrid`, `nav2_msgs/msg/Costmap`, `map_msgs/msg/OccupancyGridUpdate`, `foxglove_msgs/msg/RawImage`, `foxglove_msgs/msg/CompressedImage`, `foxglove_msgs/msg/PointCloud` | `low`, `latest`                                                           |
-| `foxglove_msgs/msg/CompressedVideo`                                                                                                                                                                                                                                                     | `low`, `all`. Dropping a video frame breaks the frames that depend on it. |
-| Everything else                                                                                                                                                                                                                                                                         | `normal`, `all`                                                           |
+| Message types                                                                                                                                                                                                                          | Default                                                                   |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `tf2_msgs/msg/TFMessage`, `sensor_msgs/msg/JointState`, `nav_msgs/msg/Odometry`                                                                                                                                                        | `high`, `all`                                                             |
+| `sensor_msgs/msg/Image`, `sensor_msgs/msg/CompressedImage`, `sensor_msgs/msg/PointCloud2`, `nav_msgs/msg/OccupancyGrid`, `nav2_msgs/msg/Costmap`, `map_msgs/msg/OccupancyGridUpdate`, and other image and point cloud types MITI draws | `low`, `latest`                                                           |
+| Compressed video types                                                                                                                                                                                                                 | `low`, `all`. Dropping a video frame breaks the frames that depend on it. |
+| Everything else                                                                                                                                                                                                                        | `normal`, `all`                                                           |
 
 **Backpressure.** The server writes one frame at a time to each socket, and keeps what the socket
 holds unsent small (libmiti: 128 KB, with `TCP_NOTSENT_LOWAT` where the OS has it). Messages wait

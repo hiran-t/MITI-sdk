@@ -1,6 +1,6 @@
 # Generic service client prototype
 
-Phase 0 of [the design](../../docs/design.md) names one risk to settle first: calling a ROS 2 service whose type is known only at run time, with a CDR request, on Humble. miti_bridge needs this to serve MITI's service calls.
+[The design](../../docs/design.md) names one risk to settle first: calling a ROS 2 service whose type is known only at run time, with a CDR request, on Humble. miti_bridge needs this to serve MITI's service calls.
 
 **Settled.** `generic_service_call` calls the fixture's `std_srvs/srv/SetBool` service with a CDR request and prints the CDR response. It works on Humble and on Jazzy, from one source file, with no warnings on either.
 
