@@ -65,7 +65,8 @@ libmiti's example server (`core/examples/conformance_server`) and miti_bridge (H
 foxglove_bridge 3.6 passes every base check on Humble and Jazzy: 19 pass, and the 15 extension checks are skipped.
 
 - **Locally:** pixi on macOS arm64.
-- **CI:** `ros:<distro>-ros-base` on amd64 and arm64, with the bridge from apt (3.6.0), and Windows x64 with RoboStack's (3.6.0).
+- **CI:** `ros:<distro>-ros-base` on amd64 and arm64, with the bridge from apt (3.6.0).
+- **Windows x64,** with RoboStack's 3.6.0: it passed in four of five CI runs. In the other it did not see the fixture's topics within 30 s, so CI does not run it there.
 
 Things this confirmed about foxglove_bridge, which docs/protocol.md now requires of every server:
 

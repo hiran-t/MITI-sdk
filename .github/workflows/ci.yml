@@ -149,7 +149,9 @@ jobs:
           bash prototypes/generic_service_client/run.sh
 
   # RoboStack's Humble and Jazzy on Windows, built with MSVC like libmiti above. colcon prints each
-  # package's whole output (console_cohesion+), since MSVC writes its errors to stdout.
+  # package's whole output (console_cohesion+), since MSVC writes its errors to stdout. The
+  # foxglove_bridge reference runs on Linux only: on Windows it once in five runs did not see the
+  # fixture's topics within 30 s.
   ros-windows:
     name: ${{ matrix.distro }} (Windows, RoboStack)
     strategy:
@@ -189,5 +191,3 @@ jobs:
       - run: pixi run -e $DISTRO install
       - name: Conformance against miti_bridge
         run: pixi run -e $DISTRO bash conformance/run.sh miti-bridge install/$DISTRO/lib/miti_bridge/miti_bridge
-      - name: Conformance against foxglove_bridge
-        run: pixi run -e $DISTRO bash conformance/run.sh foxglove

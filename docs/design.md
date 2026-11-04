@@ -584,8 +584,9 @@ Both targets are met: TF p95 is under 150 ms with the camera streaming, and the 
     8.3 short name does not make it an asset.
   - **Conformance suite.** It runs from Git Bash.
 - **Checked in CI on Windows:** 56 gtests, a shared build, and the conformance suite against the
-  example server (33). On Humble and Jazzy: colcon tests, the launch file, the suite against
-  miti_bridge (33) and against foxglove_bridge (the 19 base checks).
+  example server (33). On Humble and Jazzy: colcon tests, the launch file, and the suite against
+  miti_bridge (33). foxglove_bridge from RoboStack passed the base checks in four of five runs; in
+  the other it did not see the fixture's topics within 30 s, so CI runs it on Linux only.
 - **Not checked:** a Windows PC other than GitHub's runners, and a slow link: `bench/link` needs
   `tc netem`, which is Linux only.
 - **In MITI, after a release:** the bridge beside MITI on Windows becomes miti_bridge, built from
