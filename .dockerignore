@@ -1,0 +1,4 @@
+# Only what docker/Dockerfile copies: the .debs and the entrypoint.
+*
+!dist/*.deb
+!docker/entrypoint.sh

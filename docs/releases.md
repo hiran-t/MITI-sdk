@@ -30,6 +30,7 @@ The release tag is `v` and that version, for example `v0.1.0`. The Packages work
    - builds the packages from the tag on all four combinations
    - installs each in a fresh container, starts it with `ros2 launch miti_bridge miti_start`, and runs the conformance suite
    - attaches the packages to the release
+   - builds the Docker image of each distro from them, starts it, and pushes `ghcr.io/hiran-t/miti-bridge:<version>-<distro>` and `:<distro>` for amd64 and arm64 ([docker.md](docker.md))
    - rebuilds the apt repository from the packages of the last three releases, and force-pushes it to the `gh-pages` branch
 
 To publish an existing tag again, run the workflow by hand with that tag (Actions → Packages → Run workflow).
