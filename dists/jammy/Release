@@ -1,0 +1,32 @@
+Architectures: amd64 arm64
+Codename: jammy
+Components: main
+Date: Thu, 05 Nov 2026 07:55:26 +0000
+Description: miti_bridge and libmiti for ROS 2
+Label: MITI SDK
+Origin: MITI SDK
+Suite: jammy
+MD5Sum:
+ 609ebb27d54d48810ba800bdd40e4c5d              191 Release
+ 3bacecc2c2b0586053049f5f1435e400             5589 main/binary-amd64/Packages
+ 7d703faef392757b2359cbc691eda70c             1769 main/binary-amd64/Packages.gz
+ 050bc43eea306e9adb2f195422218f8b             5589 main/binary-arm64/Packages
+ b0bd77f1cb847cd138e921e86422c1c3             1771 main/binary-arm64/Packages.gz
+SHA1:
+ d87cb26e5e8768d29032b8e4ca50f1cb15b525ee              191 Release
+ 2ac951dc5172b70a957e92b4b12953a86fbad158             5589 main/binary-amd64/Packages
+ ec5b4ae7e34d73153979101b5dfbd09faee49ca8             1769 main/binary-amd64/Packages.gz
+ b563cf320ecc97d6f60e4546ebd90e8ab14e26f3             5589 main/binary-arm64/Packages
+ 470d1f9907fc09330d48cae8dff556bbf7b363d4             1771 main/binary-arm64/Packages.gz
+SHA256:
+ bcd0a1634e675ee04e109c291082bf78387c4ac6721412c2fb0daaa0331f8a48              191 Release
+ 49d233fbf9ceababbd53dd97ebfa73d958eac9fde7b705cc41ae86cfb3ba8315             5589 main/binary-amd64/Packages
+ ce0ae8f35c251cf3f59945ba28b0e85235009a107f5308c3900b99a41c382a34             1769 main/binary-amd64/Packages.gz
+ 80df8d53aa801f78f33d1ce5bf11477d82d0314a5289248c07e010bef2e096c1             5589 main/binary-arm64/Packages
+ c7a79c11dddd2fabe0bc7aec0583a55dde78fd271b90207f3aea3de7e21ae580             1771 main/binary-arm64/Packages.gz
+SHA512:
+ 019fe439fe0b2c79e4cb935749c8ba632f54b0f300bd77de3ce3ec342f2265a3b10fe03005091d76c7617e67e2deb84c7e5e4d005390148429217df327cc92f5              191 Release
+ 487e030ef2a0ba87356a8b44a317c4c2d068f16072160c5e9e8adc52a5042d085e46bff1da6d8ba772eee85bef4198734053174e6dc24c0008f5b68a4efdbabf             5589 main/binary-amd64/Packages
+ 05de7bc5ff94ef562aab7f42de0fb6c7288d761030ffe1fcc2727cbb2eef88743e120d713c691c723d01bf86bccf53a1b02dd8596e3e8668244f6b6b1daf16cc             1769 main/binary-amd64/Packages.gz
+ b03d26a27ab532e2b7aabccebdf640c570bd5beda5282746fd32020980663a9546ee599d2e3eb00b8d2109ccc0748f5b61958249590f540a8a2099e8b18bf2d6             5589 main/binary-arm64/Packages
+ 4698ae3cae2e0d7ce61e45c293132fdceab9f6dd018a872fab49e5bad55c00a212546d279835a846b9f66176edf878141bf0c9bddc0633f0d33efc085ba9cc6f             1771 main/binary-arm64/Packages.gz

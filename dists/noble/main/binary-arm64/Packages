@@ -1,0 +1,107 @@
+Package: ros-jazzy-libmiti
+Architecture: arm64
+Version: 0.1.0-0noble
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 4264
+Depends: libturbojpeg0-dev
+Filename: pool/main/noble/ros-jazzy-libmiti_0.1.0-0noble_arm64.deb
+Size: 581086
+MD5sum: dd3c6a62c7be56808a3a6e61c5b6c94a
+SHA1: 5b2db534efc3fe52c2444923952480fce2df2a51
+SHA256: 0cc46bc521473b45f87c58e02f020adacac280eaad0536438b491ef3cd3640a0
+SHA512: 93e5c1980cb7a3ee30624de44134939a85c9cbadbd6527e0eae64e2b8156c7d38a3b6151bc35fadcb70df6faece8120156e1136753f270e2a430966ecdcf6f96
+Homepage: https://index.ros.org/p/libmiti/#jazzy
+Description: Serves MITI over WebSocket with the MITI protocol.
+ Plain CMake, no ROS dependency; the package.xml lets colcon and rosdep build it in a ROS workspace.
+
+Package: ros-jazzy-libmiti
+Architecture: arm64
+Version: 0.1.1-0noble
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 4262
+Depends: libturbojpeg0-dev
+Filename: pool/main/noble/ros-jazzy-libmiti_0.1.1-0noble_arm64.deb
+Size: 579914
+MD5sum: 0b6655a73ffd64796be596ff8b7364cf
+SHA1: c078995a3841405f7f80ea5f650abc7efa9e26c0
+SHA256: 748c2483ed2f0c253c719f9f4974856ed03d3d113c4a0d63ddf8153ea61b5711
+SHA512: 2831cd85d9a64333fd367e9adda7710e346b29f3831da3e678d6fb3ab9045ed59bdc6654ee97df002be2f63078655b2ad9a82289f267fc8038241e6f2fa5d638
+Homepage: https://index.ros.org/p/libmiti/#jazzy
+Description: Serves MITI over WebSocket with the MITI protocol.
+ Plain CMake, no ROS dependency; the package.xml lets colcon and rosdep build it in a ROS workspace.
+
+Package: ros-jazzy-libmiti
+Architecture: arm64
+Version: 0.1.2-0noble
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 4264
+Depends: libturbojpeg0-dev
+Filename: pool/main/noble/ros-jazzy-libmiti_0.1.2-0noble_arm64.deb
+Size: 580708
+MD5sum: 1c3ae0a239abaed263961cad7f1152af
+SHA1: 1f5417d2e6e3179c828b59033d4f3a6605bfe724
+SHA256: 9953392ea396f7c2c3b5887bd1fefc0e4baa6ba043d45686ad15217b2c57069e
+SHA512: 3f03899c11c541f1b22436e6afdc5304915ea083b16f5f60cee6e6771742a27556f9f27a77a1c94aa729837a933483b266a95a40a46e83dd14189b53898a9b59
+Homepage: https://index.ros.org/p/libmiti/#jazzy
+Description: Serves MITI over WebSocket with the MITI protocol.
+ Plain CMake, no ROS dependency; the package.xml lets colcon and rosdep build it in a ROS workspace.
+
+Package: ros-jazzy-miti-bridge
+Architecture: arm64
+Version: 0.1.0-0noble
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 2231
+Depends: libc6 (>= 2.38), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 13.1), libturbojpeg (>= 8c), ros-jazzy-ament-index-cpp, ros-jazzy-launch-ros, ros-jazzy-rclcpp, ros-jazzy-rcpputils, ros-jazzy-rmw, ros-jazzy-ros2launch, ros-jazzy-rosgraph-msgs, ros-jazzy-rosidl-typesupport-introspection-cpp
+Filename: pool/main/noble/ros-jazzy-miti-bridge_0.1.0-0noble_arm64.deb
+Size: 622888
+MD5sum: f87fd54a50b25edeb2de95f4d448a27a
+SHA1: e59899b29d287ed10b814792d301af90bafd26aa
+SHA256: 0ee4f69438bb12e2bf818107b0fff86caca7bada3e3d89153545ecf789a6244d
+SHA512: 563747fe9858199c3039459c85ad9e592efbf44c2465e1a257b0ea28db03170ea62c02fff3e63774746acbeecbb23d72e740b41c598e73eacc033a603423a7fa
+Homepage: https://index.ros.org/p/miti_bridge/#jazzy
+Description: Serves a ROS 2 robot's topics, services, parameters and meshes to MITI over the MITI protocol, on libmiti.
+ Replaces foxglove_bridge for MITI.
+
+Package: ros-jazzy-miti-bridge
+Architecture: arm64
+Version: 0.1.1-0noble
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 2231
+Depends: libc6 (>= 2.38), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 13.1), libturbojpeg (>= 8c), ros-jazzy-ament-index-cpp, ros-jazzy-launch-ros, ros-jazzy-rclcpp, ros-jazzy-rcpputils, ros-jazzy-rmw, ros-jazzy-ros2launch, ros-jazzy-rosgraph-msgs, ros-jazzy-rosidl-typesupport-introspection-cpp
+Filename: pool/main/noble/ros-jazzy-miti-bridge_0.1.1-0noble_arm64.deb
+Size: 622606
+MD5sum: cbf9943c8d54ba58f4fac8dc81cd9351
+SHA1: a1e8ce083542c39704776730714337e9d5046771
+SHA256: 47e8e05ea8c51f092781010ce4ed8c32a9eb5d8a88b15d2075abd8c4623539e6
+SHA512: e03d2cb07761d9361118b331d8f4b04f10450326c39afa5945a1a9e3b8fc00b5617192b829961c83bebc50876a3ad3a09be442edc7bddf47acd38acc79436804
+Homepage: https://index.ros.org/p/miti_bridge/#jazzy
+Description: Serves a ROS 2 robot's topics, services, parameters and meshes to MITI over the MITI protocol, on libmiti.
+ Replaces foxglove_bridge for MITI.
+
+Package: ros-jazzy-miti-bridge
+Architecture: arm64
+Version: 0.1.2-0noble
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 2231
+Depends: libc6 (>= 2.38), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 13.1), libturbojpeg (>= 8c), ros-jazzy-ament-index-cpp, ros-jazzy-launch-ros, ros-jazzy-rclcpp, ros-jazzy-rcpputils, ros-jazzy-rmw, ros-jazzy-ros2launch, ros-jazzy-rosgraph-msgs, ros-jazzy-rosidl-typesupport-introspection-cpp
+Filename: pool/main/noble/ros-jazzy-miti-bridge_0.1.2-0noble_arm64.deb
+Size: 622618
+MD5sum: ddbca59ca4c62e9c67f6bdccf9993627
+SHA1: 19edc3404705be161f44d914d397140cd1083c6c
+SHA256: 72ab6d7e71ee790c954b65de39fc6e9d81ef8fe28748769f443e3f7de0739736
+SHA512: b504928db300a612c958ba872b33861152ec79a5e54d950ba9d327f706c1a8a266d1a133dd420054a1629239e725f7507a998824381d5dc300246cab728aa1c1
+Homepage: https://index.ros.org/p/miti_bridge/#jazzy
+Description: Serves a ROS 2 robot's topics, services, parameters and meshes to MITI over the MITI protocol, on libmiti.
+

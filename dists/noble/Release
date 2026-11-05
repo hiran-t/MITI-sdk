@@ -1,0 +1,32 @@
+Architectures: amd64 arm64
+Codename: noble
+Components: main
+Date: Thu, 05 Nov 2026 07:55:26 +0000
+Description: miti_bridge and libmiti for ROS 2
+Label: MITI SDK
+Origin: MITI SDK
+Suite: noble
+MD5Sum:
+ f99bb2c1fb7d67b7c201300b9233cba6              191 Release
+ 0b59c74cc9e6e5f95899135f1dd65e79             5577 main/binary-amd64/Packages
+ d834434d5091daf11c0454da50e4ed19             1758 main/binary-amd64/Packages.gz
+ fe74d5f57b21ee5e114ade69668612cc             5577 main/binary-arm64/Packages
+ 8b9a96a825affbd07f00a51ec210ebcb             1762 main/binary-arm64/Packages.gz
+SHA1:
+ fd1e74b411d6cf6573c94864026e0fdc6da4f659              191 Release
+ c2ef61744189fe62ac9790098e8a4272f567c550             5577 main/binary-amd64/Packages
+ 642871a22e932b3bae246bbee303f66c4cf03d3b             1758 main/binary-amd64/Packages.gz
+ 994f871fba1d0d4d9d1102f4bf373a771fe3969a             5577 main/binary-arm64/Packages
+ daa0b9cab5acf394608a38cc90d445cf60f56940             1762 main/binary-arm64/Packages.gz
+SHA256:
+ 0344cc2caf61781f7dcf38a4a9d020e543967be05b9a5b341a01c16f65c048e3              191 Release
+ 6ecf3ffbd7977a2e321ce4ecd937ad66ca12719ae5469f81875b47f64ee24186             5577 main/binary-amd64/Packages
+ 6fdd64cd7a04420f947cf923820fd44e76c71d9ca98afb6324f810d664072dc4             1758 main/binary-amd64/Packages.gz
+ 4674f442dbe1ee738c6429dbba1f441d9f9e568f0c867aa4cca917f0447bdb82             5577 main/binary-arm64/Packages
+ cc430b5be5e15d78eb8a62a637deb9103404b09494c89dae2a8a216d9d5de414             1762 main/binary-arm64/Packages.gz
+SHA512:
+ 94c865aa4722bff400ec2df504080000eb4a7d73479d1724ae1e8abce3a739adf3863dd2d64ca3a1c7197741bd59d03dc264fe91e1a56bca7f550350f6a0c770              191 Release
+ 847018dc7617f0f557b5e570927376f23349a1d7db018cdebb39b99216c6c8961e2db2c32faa31e0ea2d7201b8c9203a07a79cfec036282528345c00b20374b4             5577 main/binary-amd64/Packages
+ 6eb94b3168d05597ac9fc63fa793ad0dc30e202aca6f2b11b538d4d66a2b3f4da9f9960b73c9d3cdf3f4a45e58e393b97241573683fb444f2884b6bb60b1779f             1758 main/binary-amd64/Packages.gz
+ fde75022177391845f55816bbddb3370b8f74e1245c1df1fa5cf013d9c9bc3d7eef070d31335e9cd12e8972232f3546189030ae697dcdabcd835cc14b7c20d0f             5577 main/binary-arm64/Packages
+ 467211d9ae1d288400da87914fbd269bff45f02797df0ca337b358529c04ddb508c8d1ac63c91be8c9792e27abb7f649881a8b7428966e67c53f44d91ec9eb8c             1762 main/binary-arm64/Packages.gz

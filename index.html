@@ -1,0 +1,13 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>MITI SDK apt repository</title>
+<h1>MITI SDK apt repository</h1>
+<p>miti_bridge for ROS 2 Humble (Ubuntu 22.04) and Jazzy (Ubuntu 24.04), amd64 and arm64:</p>
+<pre>
+curl -fsSL https://hiran-t.github.io/MITI-sdk/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/miti-sdk.gpg
+echo "deb [signed-by=/usr/share/keyrings/miti-sdk.gpg] https://hiran-t.github.io/MITI-sdk $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/miti-sdk.list
+sudo apt-get update
+sudo apt-get install ros-$ROS_DISTRO-miti-bridge
+ros2 launch miti_bridge miti_start
+</pre>
+<p>See <a href="https://github.com/hiran-t/MITI-sdk">github.com/hiran-t/MITI-sdk</a>.</p>

@@ -1,0 +1,107 @@
+Package: ros-humble-libmiti
+Architecture: amd64
+Version: 0.1.0-0jammy
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 4200
+Depends: libturbojpeg0-dev
+Filename: pool/main/jammy/ros-humble-libmiti_0.1.0-0jammy_amd64.deb
+Size: 532010
+MD5sum: 1d94ca78d8b8ac401afc513ab910b98d
+SHA1: 02d8cc4052548e2a90ae18d7f88b44fea4affd81
+SHA256: c2ab592d3046eb14bebfd1221d361f128c7f0aab3153168436bdf3dc7e92613e
+SHA512: 0614f6c9bfac6b2783a2da99c65bd058e23aede23d7cdc76e9cf09f6d5bc9dc2f5b104cbc16d2eaf48fd82ed9e72ee4199eb5dc1d718e08c3a5fb223397ed13f
+Homepage: https://index.ros.org/p/libmiti/#humble
+Description: Serves MITI over WebSocket with the MITI protocol.
+ Plain CMake, no ROS dependency; the package.xml lets colcon and rosdep build it in a ROS workspace.
+
+Package: ros-humble-libmiti
+Architecture: amd64
+Version: 0.1.1-0jammy
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 4198
+Depends: libturbojpeg0-dev
+Filename: pool/main/jammy/ros-humble-libmiti_0.1.1-0jammy_amd64.deb
+Size: 532486
+MD5sum: bb2129071bfea6434c9712c7d742aef9
+SHA1: d46589288c577c39ca6d63171034ff22bc6c35c4
+SHA256: 784f27e84730a54a4c1b98c9f4a4aae4c6cc01eb8ccf6387d6331299affc6df6
+SHA512: 3a14b6a408c0cec75a1c7bd1cf761a247be77a7badf9cfa71fccd9e59a17b8026ca8fe74f1a4e441b8c3a035bed8000850f8249ec9d2ed12e0b235a736737b09
+Homepage: https://index.ros.org/p/libmiti/#humble
+Description: Serves MITI over WebSocket with the MITI protocol.
+ Plain CMake, no ROS dependency; the package.xml lets colcon and rosdep build it in a ROS workspace.
+
+Package: ros-humble-libmiti
+Architecture: amd64
+Version: 0.1.2-0jammy
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 4199
+Depends: libturbojpeg0-dev
+Filename: pool/main/jammy/ros-humble-libmiti_0.1.2-0jammy_amd64.deb
+Size: 531802
+MD5sum: 09b658ae7f82064da22e0144a16bc778
+SHA1: ee363ed04c0d11865459bf0226d9cc8a74c1ac63
+SHA256: 9c16e7876e2ddedff535bc5ee86902a041c75682e35ebda3db226147a526db9f
+SHA512: 69d371c5f27716c4e58dbb33428c46192a190ababf8b75841b4b19909c1b02b46a20050d48d0479233eef4691c8c6ecba9516332442d2cbe2758e5af8b589d35
+Homepage: https://index.ros.org/p/libmiti/#humble
+Description: Serves MITI over WebSocket with the MITI protocol.
+ Plain CMake, no ROS dependency; the package.xml lets colcon and rosdep build it in a ROS workspace.
+
+Package: ros-humble-miti-bridge
+Architecture: amd64
+Version: 0.1.0-0jammy
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 1876
+Depends: libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), libturbojpeg, ros-humble-ament-index-cpp, ros-humble-launch-ros, ros-humble-rclcpp, ros-humble-rcpputils, ros-humble-rmw, ros-humble-ros2launch, ros-humble-rosgraph-msgs, ros-humble-rosidl-typesupport-introspection-cpp
+Filename: pool/main/jammy/ros-humble-miti-bridge_0.1.0-0jammy_amd64.deb
+Size: 561058
+MD5sum: 29c5c074466d0be8d2dd7c609701ff35
+SHA1: e2dacd72656d13c2d42b6eda1622e445a4d11ad8
+SHA256: a60a0fd95f761793c99e714c2940e6fb12112f7884cd364b6b06e685181e45ed
+SHA512: 59543c63026627834188040f1a5c3090a2fc44c2f1efad90c047ff260a8707d80f6c73ada5b77b8b3cad882fa43825b66ea8f726b219fd955d8ebb4f2f9dfb10
+Homepage: https://index.ros.org/p/miti_bridge/#humble
+Description: Serves a ROS 2 robot's topics, services, parameters and meshes to MITI over the MITI protocol, on libmiti.
+ Replaces foxglove_bridge for MITI.
+
+Package: ros-humble-miti-bridge
+Architecture: amd64
+Version: 0.1.1-0jammy
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 1876
+Depends: libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), libturbojpeg, ros-humble-ament-index-cpp, ros-humble-launch-ros, ros-humble-rclcpp, ros-humble-rcpputils, ros-humble-rmw, ros-humble-ros2launch, ros-humble-rosgraph-msgs, ros-humble-rosidl-typesupport-introspection-cpp
+Filename: pool/main/jammy/ros-humble-miti-bridge_0.1.1-0jammy_amd64.deb
+Size: 560726
+MD5sum: ea87cd89b08254879c260f4024849860
+SHA1: 519be8cf0eb0fb09dc95a081cfcd778c9287965d
+SHA256: 8880f31e9b60ef8f9555e94501c3a24337b74bf7aab5f9cbd3c5ddc56e67753a
+SHA512: 953d52cd9f8f384f0c39d51f3b9d6f2bcd781a101baac588241df4a94d1409b5085e65c46ed00df51cd5575ccffd968bd0e5451ac99188d977679b763ae651de
+Homepage: https://index.ros.org/p/miti_bridge/#humble
+Description: Serves a ROS 2 robot's topics, services, parameters and meshes to MITI over the MITI protocol, on libmiti.
+ Replaces foxglove_bridge for MITI.
+
+Package: ros-humble-miti-bridge
+Architecture: amd64
+Version: 0.1.2-0jammy
+Priority: optional
+Section: misc
+Maintainer: "MITI Contributors" <thongpanchang.h@gmail.com>
+Installed-Size: 1876
+Depends: libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), libturbojpeg, ros-humble-ament-index-cpp, ros-humble-launch-ros, ros-humble-rclcpp, ros-humble-rcpputils, ros-humble-rmw, ros-humble-ros2launch, ros-humble-rosgraph-msgs, ros-humble-rosidl-typesupport-introspection-cpp
+Filename: pool/main/jammy/ros-humble-miti-bridge_0.1.2-0jammy_amd64.deb
+Size: 560420
+MD5sum: 2f7f8c518314da20cc9f12eb547b515a
+SHA1: 4b4d4457a306088b60ce9aec4421d6369cf3d598
+SHA256: 2e8378ec3e7668bd04d80264d79b06de9d37db2c50179cfe0ba1579e385a19b2
+SHA512: a88b4b0f1a681bb62767c221626c33e7ccf4903838f55564be272da982e926cb4992d76d3404bcb6d3ac249f72f631b4b78e14929ae37c803d0edddc97067eba
+Homepage: https://index.ros.org/p/miti_bridge/#humble
+Description: Serves a ROS 2 robot's topics, services, parameters and meshes to MITI over the MITI protocol, on libmiti.
+
