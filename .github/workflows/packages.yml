@@ -7,7 +7,11 @@ name: Packages
 #
 # For a published release (or a run of this workflow with a tag) it then attaches the packages to
 # the release and publishes the apt repository on GitHub Pages (gh-pages branch) with the packages
-# of the last three releases. That needs the secret APT_GPG_PRIVATE_KEY: an ASCII-armored private
+# of the last three releases.
+#
+# Every run also builds the Docker image of each distro from these packages (docker/Dockerfile) and
+# starts it. For a release it pushes ghcr.io/<owner>/miti-bridge:<version>-<distro> and :<distro>,
+# for amd64 and arm64. That needs the secret APT_GPG_PRIVATE_KEY: an ASCII-armored private
 # key without a passphrase (see docs/releases.md).
 
 on:
@@ -99,6 +103,54 @@ jobs:
         run: |
           source /opt/ros/${{ matrix.distro }}/setup.bash
           bash packaging/test-deb.sh
+
+  image:
+    name: Image ${{ matrix.distro }}
+    needs: install
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [humble, jazzy]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/miti-bridge
+    steps:
+      # docker/ from the commit this workflow runs on; the packages come from the build jobs.
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: debs-${{ matrix.distro }}-*
+          merge-multiple: true
+          path: dist
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - name: Build for amd64 and start it
+        run: |
+          docker buildx build --load --platform linux/amd64 -f docker/Dockerfile \
+            --build-arg ROS_DISTRO=${{ matrix.distro }} -t miti-bridge:test .
+          docker run -d --name bridge --network host -e ROS_DOMAIN_ID=$((100 + RANDOM % 100)) \
+            -e ROS_LOCALHOST_ONLY=1 -e ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST miti-bridge:test
+          for _ in $(seq 60); do docker logs bridge 2>&1 | grep -q 'Serving MITI on port' && break; sleep 1; done
+          docker logs bridge
+          curl -s -m 5 -i --http1.1 -H 'Connection: Upgrade' -H 'Upgrade: websocket' \
+            -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+            -H 'Sec-WebSocket-Protocol: miti.bridge.v1' http://127.0.0.1:8765/ | tee handshake.txt
+          grep -q '^HTTP/1.1 101' handshake.txt
+      - uses: docker/login-action@v4
+        if: env.TAG != ''
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Push for amd64 and arm64
+        if: env.TAG != ''
+        run: |
+          docker buildx build --push --platform linux/amd64,linux/arm64 -f docker/Dockerfile \
+            --build-arg ROS_DISTRO=${{ matrix.distro }} \
+            -t "$IMAGE:${TAG#v}-${{ matrix.distro }}" -t "$IMAGE:${{ matrix.distro }}" .
 
   publish:
     name: Attach and publish

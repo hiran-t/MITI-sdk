@@ -18,7 +18,14 @@ echo "deb [signed-by=/usr/share/keyrings/miti-sdk.gpg] https://hiran-t.github.io
 sudo apt update && sudo apt install ros-$ROS_DISTRO-miti-bridge
 ```
 
-On Windows, [build it with pixi](#windows). On another setup, [build it from source](#build-from-source). Once the API is stable, the package will also come from ROS's own apt repository, with no repository to add.
+To run it as a service with Docker, on the robot or on a computer on its network, use the image `ghcr.io/hiran-t/miti-bridge` (Humble or Jazzy, amd64 or arm64); [docs/docker.md](docs/docker.md) has the steps:
+
+```bash
+docker run -d --name miti-bridge --restart unless-stopped --network host --ipc host \
+  -e ROS_DOMAIN_ID=0 ghcr.io/hiran-t/miti-bridge:jazzy
+```
+
+On Windows, [build it with pixi](#windows). On another setup, [build it from source](#build-from-source). The packages are also on their way into ROS's own repositories ([docs/releases.md](docs/releases.md#the-ros-buildfarm)), which will need no repository to add.
 
 ## Run
 

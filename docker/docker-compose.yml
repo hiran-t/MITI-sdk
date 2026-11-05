@@ -1,0 +1,27 @@
+# miti_bridge as a service on the robot, or on a computer on the robot's network:
+#
+#   docker compose -f docker/docker-compose.yml up -d     start; it starts again with the machine
+#   docker compose -f docker/docker-compose.yml logs -f   follow the logs
+#   docker compose -f docker/docker-compose.yml pull      get a newer image, then `up -d` again
+#   docker compose -f docker/docker-compose.yml down      stop
+#
+# Settings go in a .env file next to this one, or in the shell: MITI_BRIDGE_TAG (the image tag:
+# humble or jazzy, as the robot runs, or a version such as 0.1.2-jazzy), ROS_DOMAIN_ID,
+# RMW_IMPLEMENTATION and MITI_BRIDGE_PORT.
+services:
+  miti-bridge:
+    image: ghcr.io/hiran-t/miti-bridge:${MITI_BRIDGE_TAG:-jazzy}
+    container_name: miti-bridge
+    # DDS discovers the robot's nodes by multicast on the real network, and Fast DDS uses shared
+    # memory with nodes on the same machine; both need the host's network and IPC namespaces.
+    network_mode: host
+    ipc: host
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+      MITI_BRIDGE_PORT: ${MITI_BRIDGE_PORT:-8765}
+    # The robot's colcon workspace, built for the same ROS distro: its own message packages and the
+    # package:// meshes of its robot description. Uncomment and set the path.
+    # volumes:
+    #   - /home/robot/ros2_ws:/overlay:ro
+    restart: unless-stopped
