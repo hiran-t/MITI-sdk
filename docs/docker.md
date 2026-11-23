@@ -103,4 +103,10 @@ gh release download v0.1.2 --repo hiran-t/MITI-sdk --pattern 'ros-jazzy-*' --dir
 docker build -f docker/Dockerfile --build-arg ROS_DISTRO=jazzy -t miti-bridge:jazzy .
 ```
 
-The Packages workflow builds and starts the image for every change, and pushes it for every release.
+To try a change to libmiti or miti_bridge before it is released, build the same image from your checkout instead. `docker/source.Dockerfile` builds both with colcon into `/opt/miti_bridge`, which the entrypoint uses:
+
+```bash
+docker build -f docker/source.Dockerfile --build-arg ROS_DISTRO=jazzy -t miti-bridge:source .
+```
+
+The Packages workflow builds and starts the image for every change, and pushes it for every release and, as `edge-<distro>`, for every change to `main`. It also builds and starts the Jazzy image from source.

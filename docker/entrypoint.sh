@@ -13,6 +13,10 @@
 # built for the same ROS distro and mounted at /overlay: its install/setup.bash is sourced.
 set -e
 source "/opt/ros/${ROS_DISTRO}/setup.bash"
+# miti_bridge built from source (docker/source.Dockerfile) instead of from the packages.
+if [ -f /opt/miti_bridge/setup.bash ]; then
+  source /opt/miti_bridge/setup.bash
+fi
 if [ -f /overlay/install/setup.bash ]; then
   source /overlay/install/setup.bash
   echo "miti_bridge: using the workspace in /overlay"
