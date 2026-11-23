@@ -8,8 +8,12 @@ The Docker image `ghcr.io/hiran-t/miti-bridge` runs miti_bridge as a service, on
 | `jazzy`        | the newest release, on ROS 2 Jazzy              |
 | `0.1.2-humble` | that release on Humble; also for other versions |
 | `0.1.2-jazzy`  | that release on Jazzy                           |
+| `edge-humble`  | `main` on Humble, rebuilt on every change       |
+| `edge-jazzy`   | `main` on Jazzy, rebuilt on every change        |
 
 Use the ROS distro the robot runs: Humble and Jazzy nodes do not discover each other reliably.
+
+The `edge` images are for trying a change on `main` before it is released, not for robots in use. Their packages carry the last release's version number.
 
 ## 1. Install Docker
 
@@ -99,4 +103,10 @@ gh release download v0.1.2 --repo hiran-t/MITI-sdk --pattern 'ros-jazzy-*' --dir
 docker build -f docker/Dockerfile --build-arg ROS_DISTRO=jazzy -t miti-bridge:jazzy .
 ```
 
-The Packages workflow builds and starts the image for every change, and pushes it for every release.
+To try a change to libmiti or miti_bridge before it is released, build the same image from your checkout instead. `docker/source.Dockerfile` builds both with colcon into `/opt/miti_bridge`, which the entrypoint uses:
+
+```bash
+docker build -f docker/source.Dockerfile --build-arg ROS_DISTRO=jazzy -t miti-bridge:source .
+```
+
+The Packages workflow builds and starts the image for every change, and pushes it for every release and, as `edge-<distro>`, for every change to `main`. It also builds and starts the Jazzy image from source.

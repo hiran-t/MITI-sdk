@@ -11,8 +11,9 @@ name: Packages
 #
 # Every run also builds the Docker image of each distro from these packages (docker/Dockerfile) and
 # starts it. For a release it pushes ghcr.io/<owner>/miti-bridge:<version>-<distro> and :<distro>,
-# for amd64 and arm64. That needs the secret APT_GPG_PRIVATE_KEY: an ASCII-armored private
-# key without a passphrase (see docs/releases.md).
+# for amd64 and arm64, and for every push to main :edge-<distro>, to try main before a release.
+# The apt repository needs the secret APT_GPG_PRIVATE_KEY: an ASCII-armored private key without a
+# passphrase (see docs/releases.md).
 
 on:
   push:
@@ -117,6 +118,8 @@ jobs:
       packages: write
     env:
       IMAGE: ghcr.io/${{ github.repository_owner }}/miti-bridge
+      # A push to main publishes :edge-<distro>; a release, its version tags.
+      EDGE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       # docker/ from the commit this workflow runs on; the packages come from the build jobs.
       - uses: actions/checkout@v7
@@ -139,8 +142,21 @@ jobs:
             -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
             -H 'Sec-WebSocket-Protocol: miti.bridge.v1' http://127.0.0.1:8765/ | tee handshake.txt
           grep -q '^HTTP/1.1 101' handshake.txt
+      # docker/source.Dockerfile builds the same image from the checkout; one distro is enough to
+      # keep it working.
+      - name: Build from source for amd64 and start it
+        if: matrix.distro == 'jazzy'
+        run: |
+          docker rm -f bridge
+          docker buildx build --load --platform linux/amd64 -f docker/source.Dockerfile \
+            --build-arg ROS_DISTRO=${{ matrix.distro }} -t miti-bridge:source .
+          docker run -d --name source --network host -e ROS_DOMAIN_ID=$((100 + RANDOM % 100)) \
+            -e ROS_LOCALHOST_ONLY=1 -e ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST miti-bridge:source
+          for _ in $(seq 60); do docker logs source 2>&1 | grep -q 'Serving MITI on port' && break; sleep 1; done
+          docker logs source
+          docker logs source 2>&1 | grep -q 'Serving MITI on port'
       - uses: docker/login-action@v4
-        if: env.TAG != ''
+        if: env.TAG != '' || env.EDGE == 'true'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -151,6 +167,11 @@ jobs:
           docker buildx build --push --platform linux/amd64,linux/arm64 -f docker/Dockerfile \
             --build-arg ROS_DISTRO=${{ matrix.distro }} \
             -t "$IMAGE:${TAG#v}-${{ matrix.distro }}" -t "$IMAGE:${{ matrix.distro }}" .
+      - name: Push edge for amd64 and arm64
+        if: env.TAG == '' && env.EDGE == 'true'
+        run: |
+          docker buildx build --push --platform linux/amd64,linux/arm64 -f docker/Dockerfile \
+            --build-arg ROS_DISTRO=${{ matrix.distro }} -t "$IMAGE:edge-${{ matrix.distro }}" .
 
   publish:
     name: Attach and publish

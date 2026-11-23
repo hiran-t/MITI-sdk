@@ -1,0 +1,9 @@
+# Only the sources docker/source.Dockerfile builds, without build output.
+*
+!core
+!ros/miti_bridge
+!docker/entrypoint.sh
+core/build*
+**/build
+**/install
+**/log
