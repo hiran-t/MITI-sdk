@@ -2,6 +2,12 @@
 Changelog for package libmiti
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.3 (2026-11-23)
+------------------
+* A subscription with ``maxRate`` can also ask for ``keepNewest``: when the rate holds a message
+  back, the server keeps the newest one and sends it once the rate allows, so a topic that goes
+  quiet ends on its last message. Servers advertise the capability ``miti.keepNewest``.
+
 0.1.2 (2026-11-04)
 ------------------
 * Builds with MSVC on Windows x64. ``file:///C:/dir/a.stl`` names ``C:\dir\a.stl``; a path whose
