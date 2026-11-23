@@ -97,6 +97,7 @@ std::vector<std::string> ServerImpl::capabilities() const
   if (options.time) list.push_back("time");
   if (options.get_schema) list.push_back("miti.schemas");
   list.push_back("miti.transforms");
+  list.push_back("miti.keepNewest");
   list.push_back("miti.stats");
   return list;
 }

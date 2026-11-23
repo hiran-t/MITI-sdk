@@ -4,7 +4,13 @@
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { readCompressedImage, readImage, readPointCloud2 } from '../src/cdr.ts';
+import {
+  readCompressedImage,
+  readImage,
+  readPointCloud2,
+  readString,
+  writeString,
+} from '../src/cdr.ts';
 import { FIXTURE, SERVER_URL, connectWhenReady } from '../src/fixture.ts';
 import {
   Connection,
@@ -154,6 +160,82 @@ describe('extensions', () => {
       } finally {
         connection.unsubscribe(subscription);
       }
+    });
+
+    describe('keepNewest', () => {
+      let reason = '';
+      before(() => {
+        if (skip) reason = skip;
+        else if (!info.capabilities.includes('miti.keepNewest'))
+          reason = 'no miti.keepNewest capability';
+        else if (!info.capabilities.includes('clientPublish'))
+          reason = 'no clientPublish capability, which the check publishes its burst with';
+      });
+
+      it('sends the last message of a burst once maxRate allows it', async (t) => {
+        if (reason) return t.skip(reason);
+        const echo = await connection.channel(FIXTURE.echo.out, FIXTURE.echo.type);
+        const subscription = connection.subscribe(echo.id);
+        const isEcho = isMessageData(subscription);
+        const channelId = connection.id();
+        connection.send({
+          op: 'advertise',
+          channels: [
+            {
+              id: channelId,
+              topic: FIXTURE.echo.in,
+              encoding: 'cdr',
+              schemaName: FIXTURE.echo.type,
+            },
+          ],
+        });
+        try {
+          // A new publisher needs a moment to be discovered: send until an echo comes back.
+          const ready = connection.mark();
+          const timer = setInterval(
+            () => connection.sendClientMessage(channelId, writeString('ready')),
+            200
+          );
+          try {
+            await connection.find(isEcho, { since: ready, timeoutMs: 10000 });
+          } finally {
+            clearInterval(timer);
+          }
+          setOptions(subscription, { maxRate: 1, keepNewest: true });
+          // Let the echoes still on their way arrive, and the rate's interval pass.
+          await pause(2500);
+
+          const since = connection.mark();
+          const last = `last ${Date.now()}`;
+          for (let i = 0; i < 5; i++) connection.sendClientMessage(channelId, writeString(`${i}`));
+          connection.sendClientMessage(channelId, writeString(last));
+          // The burst's first message goes at once; the last waits for the next second.
+          const message = await connection.find(
+            (received): received is MessageData =>
+              isEcho(received) && readString(received.data) === last,
+            { since, timeoutMs: 3000 }
+          );
+          const sent = connection.received.slice(since).filter(isEcho);
+          assert.ok(sent.length <= 2, `${sent.length} messages at maxRate 1`);
+          assert.equal(sent.at(-1), message, 'the last message of the burst came last');
+        } finally {
+          connection.unsubscribe(subscription);
+          connection.send({ op: 'unadvertise', channelIds: [channelId] });
+        }
+      });
+
+      it('answers a keepNewest that is not a boolean with a status error', async (t) => {
+        if (reason) return t.skip(reason);
+        const channel = await connection.channel(FIXTURE.string.topic);
+        const subscription = connection.subscribe(channel.id);
+        try {
+          const since = connection.mark();
+          setOptions(subscription, { maxRate: 1, keepNewest: 'yes' });
+          assert.equal((await nextStatus(since)).level, 2);
+        } finally {
+          connection.unsubscribe(subscription);
+        }
+      });
     });
 
     // Over a fast local connection nothing waits long enough to be replaced or reordered;

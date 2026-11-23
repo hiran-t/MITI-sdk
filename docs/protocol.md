@@ -65,6 +65,7 @@ Right after the handshake, the server sends, in this order:
 | `assets`          | `fetchAsset`                                       |
 | `time`            | The server sends `time`                            |
 | `miti.transforms` | `transform` in `miti.subscriptionOptions`          |
+| `miti.keepNewest` | `keepNewest` in `miti.subscriptionOptions`         |
 | `miti.stats`      | `miti.subscribeStats`                              |
 | `miti.schemas`    | `miti.getSchema`                                   |
 
@@ -220,6 +221,7 @@ Details:
   "op": "miti.subscriptionOptions",
   "subscriptionId": 12,
   "maxRate": 10,
+  "keepNewest": true,
   "delivery": "latest",
   "priority": "low",
   "transform": { "kind": "jpeg", "quality": 80, "maxWidth": 960 }
@@ -234,6 +236,14 @@ Fields:
     little early.
   - It drops messages before they are transformed or queued.
   - `null` or a missing field means no limit.
+- **`keepNewest`:** `true` or `false`, the default. Needs the `miti.keepNewest` capability.
+  - With `true`, a message that comes too soon for `maxRate` waits instead of being dropped. The
+    server sends it once `maxRate` allows the next message. A newer message that comes before then
+    replaces it, and the one replaced counts as dropped.
+  - So the last message before a topic goes quiet always arrives. Without it, a client that limits
+    the rate can keep showing an older message for as long as the topic stays quiet.
+  - Without `maxRate`, it changes nothing.
+  - Turning it off drops the message waiting, if there is one.
 - **`delivery`:**
   - `all` queues every message, up to a bounded queue; the oldest are dropped when it is full.
   - `latest` keeps one waiting message per subscription, so a newer message replaces it.

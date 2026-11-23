@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <future>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <thread>
@@ -190,7 +191,8 @@ TEST(Server, SendsServerInfoThenItsChannels)
   const auto info = client.next().op();
   EXPECT_EQ(info["op"], "serverInfo");
   EXPECT_EQ(info["name"], "test");
-  EXPECT_EQ(info["capabilities"], json::array({"time", "miti.transforms", "miti.stats"}));
+  EXPECT_EQ(info["capabilities"],
+    json::array({"time", "miti.transforms", "miti.keepNewest", "miti.stats"}));
   EXPECT_EQ(info["metadata"]["robot"], "r1");
   EXPECT_TRUE(info["metadata"].contains("miti.version"));
 
@@ -262,6 +264,17 @@ TEST(Server, AnswersMistakesWithStatusErrors)
   EXPECT_EQ(client.next("status")["level"], 2);  // no subscriptions field
   client.send(json{{"op", "dance"}});
   EXPECT_EQ(client.next("status")["level"], 1);  // unknown op: a warning
+}
+
+TEST(Server, AnswersAKeepNewestThatIsNotABooleanWithAStatusError)
+{
+  const auto server = miti::Server::create(local());
+  const auto channel = server->add_channel({"/chatter", STRING});
+  Client client(server->port());
+  client.next("advertise");
+  client.send(json{{"op", "subscribe"}, {"subscriptions", {{{"id", 1}, {"channelId", channel->id()}}}}});
+  client.send(json{{"op", "miti.subscriptionOptions"}, {"subscriptionId", 1}, {"keepNewest", "yes"}});
+  EXPECT_EQ(client.next("status")["level"], 2);
 }
 
 TEST(Server, AdvertisesAndUnadvertisesChannelsAddedLater)
@@ -451,6 +464,70 @@ TEST(Server, SendsStatsWhileAClientWantsThem)
   channel->log(Bytes{1}, 2);
   const auto after = client.next();
   EXPECT_FALSE(after.text) << after.data;
+}
+
+namespace
+{
+
+/// A client subscribed to `channel` as subscription 1, with these options in force.
+std::unique_ptr<Client> subscribed(miti::Server & server, const miti::Channel & channel,
+  const json & options)
+{
+  auto client = std::make_unique<Client>(server.port());
+  client->next("advertise");
+  client->send(json{{"op", "subscribe"}, {"subscriptions", {{{"id", 1}, {"channelId", channel.id()}}}}});
+  auto message = options;
+  message["op"] = "miti.subscriptionOptions";
+  message["subscriptionId"] = 1;
+  client->send(message);
+  // Answered after the options: once it comes, they apply.
+  client->send(json{{"op", "miti.subscriptionOptions"}, {"subscriptionId", 99}, {"maxRate", 1}});
+  client->next("status");
+  return client;
+}
+
+}  // namespace
+
+TEST(Server, KeepNewestSendsTheLastMessageOfABurstWhenMaxRateAllows)
+{
+  const auto server = miti::Server::create(local());
+  const auto channel = server->add_channel({"/clock", STRING});
+  // One message per 200 ms, 180 ms tolerated.
+  const auto client = subscribed(*server, *channel, {{"maxRate", 5}, {"keepNewest", true}});
+  const auto start = std::chrono::steady_clock::now();
+  for (uint8_t i = 1; i <= 3; ++i) channel->log(Bytes{i}, i);
+  EXPECT_EQ(client->next_binary(0x01).back(), 1);  // at once
+  // 2 waited and was replaced by 3, which goes when the rate allows, though nothing follows it.
+  EXPECT_EQ(client->next_binary(0x01).back(), 3);
+  EXPECT_GE(std::chrono::steady_clock::now() - start, 170ms);
+}
+
+TEST(Server, KeepNewestOffDropsTheWaitingMessage)
+{
+  const auto server = miti::Server::create(local());
+  const auto channel = server->add_channel({"/clock", STRING});
+  const auto client = subscribed(*server, *channel, {{"maxRate", 2}, {"keepNewest", true}});
+  channel->log(Bytes{1}, 1);
+  channel->log(Bytes{2}, 2);  // waits for its turn, 450 ms
+  EXPECT_EQ(client->next_binary(0x01).back(), 1);
+  client->send(json{{"op", "miti.subscriptionOptions"}, {"subscriptionId", 1}, {"keepNewest", false}});
+  std::this_thread::sleep_for(600ms);
+  channel->log(Bytes{3}, 3);
+  EXPECT_EQ(client->next_binary(0x01).back(), 3);  // 2 never came
+}
+
+TEST(Server, KeepNewestSendsTheWaitingMessageWhenMaxRateIsRemoved)
+{
+  const auto server = miti::Server::create(local());
+  const auto channel = server->add_channel({"/clock", STRING});
+  const auto client = subscribed(*server, *channel, {{"maxRate", 0.5}, {"keepNewest", true}});
+  channel->log(Bytes{1}, 1);
+  channel->log(Bytes{2}, 2);  // would wait 1.8 s
+  EXPECT_EQ(client->next_binary(0x01).back(), 1);
+  const auto start = std::chrono::steady_clock::now();
+  client->send(json{{"op", "miti.subscriptionOptions"}, {"subscriptionId", 1}, {"maxRate", nullptr}});
+  EXPECT_EQ(client->next_binary(0x01).back(), 2);
+  EXPECT_LT(std::chrono::steady_clock::now() - start, 1s);
 }
 
 TEST(Server, AFrameReplacedBeforeItsTransformGoesToEveryoneWhoWaitedForIt)

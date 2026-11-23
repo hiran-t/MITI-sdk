@@ -96,6 +96,21 @@ TEST(Scheduler, MaxRateDropsMessagesThatComeTooSoon)
   EXPECT_EQ(drain(scheduler), (std::vector<int>{1, 3, 5}));
 }
 
+TEST(Scheduler, NextAdmissionIsWhenMaxRateLetsTheNextMessageGo)
+{
+  Scheduler scheduler(10);
+  scheduler.add(1, {10, Delivery::all, Priority::normal});
+  EXPECT_EQ(scheduler.next_admission(1), Scheduler::Clock::time_point{});  // nothing sent yet
+  EXPECT_TRUE(scheduler.admit(1, t0 + 1s));
+  EXPECT_EQ(scheduler.next_admission(1), t0 + 1s + 90ms);
+  EXPECT_FALSE(scheduler.admit(1, t0 + 1s + 89ms));
+  EXPECT_TRUE(scheduler.admit(1, t0 + 1s + 90ms));
+
+  scheduler.add(2, {});  // no limit
+  EXPECT_TRUE(scheduler.admit(2, t0 + 1s));
+  EXPECT_EQ(scheduler.next_admission(2), Scheduler::Clock::time_point{});
+}
+
 TEST(Scheduler, ChangedOptionsApplyToNewMessages)
 {
   Scheduler scheduler(10);
