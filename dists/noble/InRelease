@@ -1,0 +1,51 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Architectures: amd64 arm64
+Codename: noble
+Components: main
+Date: Mon, 23 Nov 2026 16:11:22 +0000
+Description: miti_bridge and libmiti for ROS 2
+Label: MITI SDK
+Origin: MITI SDK
+Suite: noble
+MD5Sum:
+ bbff08cf8ff559b8b53bfd7ee92f000a              191 Release
+ d36017f5930464934dfe0616d0e98362             5541 main/binary-amd64/Packages
+ b60fead39b48caa20dd333b5e5c63cbb             1770 main/binary-amd64/Packages.gz
+ 262c9064876d95859a710047e7c0b416             5541 main/binary-arm64/Packages
+ 65d41bf88c77779bbdcc88a59d785935             1768 main/binary-arm64/Packages.gz
+SHA1:
+ 7dcae9583e180921fed7cd5dc779b1f00a2600f9              191 Release
+ 3823afa6a99eb39da427165ae0a9d0a430e26dc8             5541 main/binary-amd64/Packages
+ 0df9713bbd3794c1ae72e316226a54d97496c2b6             1770 main/binary-amd64/Packages.gz
+ 064398e5241cad3ea008906598572a8bf87b6685             5541 main/binary-arm64/Packages
+ b510a4338ac00722a0d911aa11fdedee5d3bd0e0             1768 main/binary-arm64/Packages.gz
+SHA256:
+ da3505f75c6d3f602b3c4bd1272dc7fd74d83d41c97ad87afc1b133b252e19b1              191 Release
+ c0d957cef39aae3a03fe24fb68a0fb098eca32ab3537f78a33b860d91189a4bd             5541 main/binary-amd64/Packages
+ 2342e626ff426f9f541dfcfcdbeb47816791c444e2adc4cb8043b1a1321a926e             1770 main/binary-amd64/Packages.gz
+ a4593a36b8c62dc51e7642b42a0f9f4b57d9316d18047007292dd67c01ad2cbf             5541 main/binary-arm64/Packages
+ 73066f320166638dd2a7521f8d5a3afddea24f16120c3680fb152544a7d72da6             1768 main/binary-arm64/Packages.gz
+SHA512:
+ 9fff17ed23019b7e05d89a41289569545a41de25320fe22886dd7d5d0f38b5b3d2887602904983a271efa4dccd23295fcb709fed3faeb2b698ad2056996a0819              191 Release
+ 7d8e77ee4e718138289a77e7482bb7820bca3ea40b389217e8bafe59c234eed55f53355798ead2eef7541a710d9d7424e063d38a43d5c4ac2f31822ce1d4534e             5541 main/binary-amd64/Packages
+ 9e19763577a04abaf93346f9a8cd13fd44f28faa69ea380a94b20a123fadf1ff9204851a79236c8abdfa076d78cee06c3d5ad86092eb877cc7791d81c7a15b38             1770 main/binary-amd64/Packages.gz
+ 7cfcd9e55f1d20b2d7fcd6805d7d1179b5ee16ab8080e4b882c2ec490e4ac412140c45412077d638a553ad5b73f66704768738562397bcfcdd8df87ebd7f4c72             5541 main/binary-arm64/Packages
+ 312a76e9f253ade01a9c2cbe86023f4a53bd00bc7230f73b48e96c4091da8757196eed8b0c415798582827c4d3fd600d8f495a407e1be600652b873acb18fd83             1768 main/binary-arm64/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEjdabhC5ZnaqOB9CllsXcb9I1YjcFAmsEZaoACgkQlsXcb9I1
+YjdXzw/9GC6spjpjMfjJuQ0hY60j404YkNkAIDPPfYXRZXKRAShQ0ZrlUK6K0M/l
+kJEQPLKd8i1Pbs/gZM2nqUKnGqI8dSgpUdA7ShttX5bAxm8U7vMxq3+MYWWrXw/I
+5FEM93X0m578/MhjoOKs7aI2Mhsf0810j9HCWqaFg56cJD1713o40of57oraxcec
+zS79u57t410fGVXpC82D0mhIJh6hZA9c3VbNCIQWrtD4Pdh2P3WcBxXIb6WqATM5
+luRwsIbLRmfaV6Sd0OL0C5VNrTbeFRRQAcil8OnWkNQdQglJZRcdA+rrKUoVqSMF
+Z7EnWUE45uVTBEiaKh5MHixJSkHOC4VRxVukn6xoamwH3Uw0ebkb26DnLOq7pNJh
+MO6+CIdX2n8RgFivaITf/9xCsTPNHUKrgJV2YgLLZWhGpacNND9Ww5r4sA9aoJQT
+OFODSIDyvjrUgD2MsCsOeUfTXJEe9es8sUwjctYy5TM3Zh45FjnQIUEXjkOyUEYz
+pl8Ff3i9ytGDqg4f+GQrej1TORBAOqLmrW1quPSB5nuJagRx698DWKb0ja7TSQJL
+rMR5Enh0darnFvZ28+f47dLFxreEvMp+CsvbuSf7p2I80+ZG0G8iPaDpmTtPtQrE
+YOQnnhlbVUdp4kpXShU3JQLP/clPt74GewhUKz8TD43oihin7js=
+=jQ4B
+-----END PGP SIGNATURE-----

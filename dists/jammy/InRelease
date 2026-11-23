@@ -1,0 +1,51 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Architectures: amd64 arm64
+Codename: jammy
+Components: main
+Date: Mon, 23 Nov 2026 16:11:22 +0000
+Description: miti_bridge and libmiti for ROS 2
+Label: MITI SDK
+Origin: MITI SDK
+Suite: jammy
+MD5Sum:
+ d724d9b839bbe24828f00e737214d474              191 Release
+ fa5e8fa9d1190f64dddb848bdcadc2c3             5553 main/binary-amd64/Packages
+ 4eb7b17f52a71800f64bfdb3d943f2ff             1772 main/binary-amd64/Packages.gz
+ a596ad9e68f612fd1e22d288a938fc5f             5553 main/binary-arm64/Packages
+ d484efc365a30b44793e94edfb30c81d             1769 main/binary-arm64/Packages.gz
+SHA1:
+ 6e18f3e7dd1f01cb510c55a3ee2ebee5961608a9              191 Release
+ 0d1efcd5a3cf07b2856d0333b675ae5475720d11             5553 main/binary-amd64/Packages
+ 645fbad2cafa4a3376e2e427083d8b0483c035ed             1772 main/binary-amd64/Packages.gz
+ 644eb364ddf59556552d0bcfe5634b61c05955f7             5553 main/binary-arm64/Packages
+ 443f1dc77a4cf58dba923da366cd8922f8595e2b             1769 main/binary-arm64/Packages.gz
+SHA256:
+ 7ba4b553b25d2c7644cfd13cccca1de34f2dd83b04833c311c90e1c0c0dddc23              191 Release
+ b726d563e526b62cee678907fde440e9807dea8e2945ba97a04a64f4073517f2             5553 main/binary-amd64/Packages
+ ead463789ba471a125c4d00b7e19a94ab8c80e22fd2578028c6b40b534a8622b             1772 main/binary-amd64/Packages.gz
+ 3a4a8beb8a4a744d5736021365ac4474518b86a64e593f8f942c6ca4864e9e11             5553 main/binary-arm64/Packages
+ d42656a8c837448527118f78a594d57f73bb249b894a46996ebd53bc18d83c92             1769 main/binary-arm64/Packages.gz
+SHA512:
+ a930e41eaf69ac48d09004e7dc2242aeb66198f9bed7614fda7b9b5b5b1336ae5e0a791dc4c09831d0db86f4bae1e1a83cdbe6b2f2ce2c3df893de91ae0c83ec              191 Release
+ 42d66b3322afc926ef29724e4af637948a2767ead4be85c03e04bad5cd43a74001be86d852dca2150265a310cff389f128a172fd1c45311f8ed896a68b55e606             5553 main/binary-amd64/Packages
+ ab1b74b2b3086c0637e64522a933cde6a757ba9138408f4c2c097316d5fee383078a654da3b14f458c795f83642eb582e4808ea1cb932baa99c9a3d2487e34c8             1772 main/binary-amd64/Packages.gz
+ 25bb556c3088e0145c8ca64264bb2c40fdece3100761c219ee6b10bd2fe9b088afdf17b7fd6db49e89dc895fa4b6c50fa8993b1d71884a5a5d2e6c0e2cd0a57e             5553 main/binary-arm64/Packages
+ 1e531dfcdfa97af11c7d41f9acf7a531fa4b3e934bba6821792fa9a4df3edcfc1e32cc6a0c869db8af511c151ccea3b6bbe6cbf76d234cb24a8d98e1be4a5485             1769 main/binary-arm64/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEjdabhC5ZnaqOB9CllsXcb9I1YjcFAmsEZaoACgkQlsXcb9I1
+YjevhA//QLNEvNeGp6EGrp7TIMyCy6j4rRLtk7CBcEmkhnqfI7+Sdor/B97wLqqi
+B99QX+NPmDSCR/r5HmR5ukjjwNTJ59OsyAfrTifZuWlcVohv3z5BsUiVEWSxYADB
+xnBDFDywQ6HdhNq5VDco8Ai4wVP9qtPDTOEPFTORbD/MV+AyTbXjTnCL17oV4wTU
+mD9S9pDsyA5yiQE4+0XyKVp5vjg/ud7j9KoFC1/XA2szpm6F05ENxqB4vmHZC7TX
+yuyULNn7TWlYCXVrp/mTh/4a/a+3vwzfWoKgvy1Klcq+Cp9ODGbbO5//Oe3t1VAb
+VbepdE0PSidgwkvArWFwFpbCoFSLa0vDKz8nH/jAuNxcifD86VuqqrTDCMytdVIY
+WzPU4THEYAFxYVKZae5WB2s67h4APlzs/vmSrR1iJ69fKy9+lZDV9fbBFTjBXIrD
+EQck1yNaLcQfkh6F/MYcJoiQPHM2E+2WTQ0Vkl7P18NjfRS5QW/F5/SL1VqlgTBF
+yWkGigqrPHDj7MyJYV1qyWMbcJu9qiV00IJBx2jRPSje1h6Cw+X5k2gdnD14xer8
+SEX670Mr+gzyDFVLWwDc1iJGUWvxQDjPOPUCpSc91Gc/rcy13Z7QYAm6LJDd5klG
+d38YWGcU04j2vLsOVwDTUEMjOK7TAym7NW64r3onbCY08Zp8k98=
+=w7Xa
+-----END PGP SIGNATURE-----
