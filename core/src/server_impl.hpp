@@ -67,6 +67,13 @@ private:
   void subscription_options(const nlohmann::json & message);
   void get_schema(const nlohmann::json & message);
   void subscribe_stats(const nlohmann::json & message);
+  /// keepNewest: keeps a message too soon for maxRate, replacing the one kept before, and sends
+  /// it when maxRate allows.
+  void hold(uint32_t subscription, std::shared_ptr<const Bytes> message, Timestamp time,
+    Scheduler::Clock::time_point until);
+  void send_held(uint32_t subscription);
+  /// Drops the message a subscription keeps, counting it as dropped.
+  void drop_held(uint32_t subscription);
   void schedule_stats(uint64_t generation);
   void send_stats();
   void error(const std::string & message);
@@ -92,6 +99,14 @@ private:
     /// Increases with each change of transform; older transformed messages are dropped.
     uint32_t generation = 0;
     bool warned = false;
+    /// keepNewest: the newest message too soon for maxRate, and the timer that sends it.
+    struct Held
+    {
+      std::shared_ptr<const Bytes> message;
+      Timestamp time;
+    };
+    std::optional<Held> held;
+    std::unique_ptr<net::steady_timer> held_timer;
   };
   std::map<uint32_t, SubscriptionState> states_;  // by subscription
   std::optional<net::steady_timer> stats_timer_;

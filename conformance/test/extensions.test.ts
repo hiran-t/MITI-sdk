@@ -4,11 +4,19 @@
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { readCompressedImage, readImage, readPointCloud2 } from '../src/cdr.ts';
+import {
+  readCompressedImage,
+  readImage,
+  readPointCloud2,
+  readString,
+  writeSetBoolRequest,
+  writeString,
+} from '../src/cdr.ts';
 import { FIXTURE, SERVER_URL, connectWhenReady } from '../src/fixture.ts';
 import {
   Connection,
   MITI_SUBPROTOCOL,
+  type Received,
   isMessageData,
   type JsonMessage,
   type MessageData,
@@ -156,10 +164,169 @@ describe('extensions', () => {
       }
     });
 
+    describe('keepNewest', () => {
+      let reason = '';
+      before(() => {
+        if (skip) reason = skip;
+        else if (!info.capabilities.includes('miti.keepNewest'))
+          reason = 'no miti.keepNewest capability';
+        else if (!info.capabilities.includes('clientPublish'))
+          reason = 'no clientPublish capability, which the check publishes its burst with';
+      });
+
+      it('sends the last message of a burst once maxRate allows it', async (t) => {
+        if (reason) return t.skip(reason);
+        const echo = await connection.channel(FIXTURE.echo.out, FIXTURE.echo.type);
+        const subscription = connection.subscribe(echo.id);
+        const isEcho = isMessageData(subscription);
+        const channelId = connection.id();
+        connection.send({
+          op: 'advertise',
+          channels: [
+            {
+              id: channelId,
+              topic: FIXTURE.echo.in,
+              encoding: 'cdr',
+              schemaName: FIXTURE.echo.type,
+            },
+          ],
+        });
+        try {
+          // A new publisher needs a moment to be discovered: send until an echo comes back.
+          const ready = connection.mark();
+          const timer = setInterval(
+            () => connection.sendClientMessage(channelId, writeString('ready')),
+            200
+          );
+          try {
+            await connection.find(isEcho, { since: ready, timeoutMs: 10000 });
+          } finally {
+            clearInterval(timer);
+          }
+          setOptions(subscription, { maxRate: 1, keepNewest: true });
+          // Let the echoes still on their way arrive, and the rate's interval pass.
+          await pause(2500);
+
+          const since = connection.mark();
+          const last = `last ${Date.now()}`;
+          for (let i = 0; i < 5; i++) connection.sendClientMessage(channelId, writeString(`${i}`));
+          connection.sendClientMessage(channelId, writeString(last));
+          // The burst's first message goes at once; the last waits for the next second.
+          const message = await connection.find(
+            (received): received is MessageData =>
+              isEcho(received) && readString(received.data) === last,
+            { since, timeoutMs: 3000 }
+          );
+          const sent = connection.received.slice(since).filter(isEcho);
+          assert.ok(sent.length <= 2, `${sent.length} messages at maxRate 1`);
+          assert.equal(sent.at(-1), message, 'the last message of the burst came last');
+        } finally {
+          connection.unsubscribe(subscription);
+          connection.send({ op: 'unadvertise', channelIds: [channelId] });
+        }
+      });
+
+      it('answers a keepNewest that is not a boolean with a status error', async (t) => {
+        if (reason) return t.skip(reason);
+        const channel = await connection.channel(FIXTURE.string.topic);
+        const subscription = connection.subscribe(channel.id);
+        try {
+          const since = connection.mark();
+          setOptions(subscription, { maxRate: 1, keepNewest: 'yes' });
+          assert.equal((await nextStatus(since)).level, 2);
+        } finally {
+          connection.unsubscribe(subscription);
+        }
+      });
+    });
+
     // Over a fast local connection nothing waits long enough to be replaced or reordered;
     // libmiti's scheduler tests check these, and bench/link checks them over a slowed link.
     it.todo('latest delivery keeps only the newest waiting message');
     it.todo('high priority is sent before low');
+  });
+
+  // Base behavior (protocol.md, Transient-local topics), checked where a ROS graph can start a
+  // publisher late: servers on the fixture graph that offer its service.
+  describe('transient-local topics', () => {
+    /**
+     * Subscribes `on` to every channel of `topic`, also those offered later, as a client that
+     * follows advertise does: a server may offer a topic again as a new channel.
+     */
+    const follow = (on: Connection, topic: string) => {
+      const subscriptions = new Map<number, number>(); // subscription id by channel id
+      const update = () => {
+        for (const offered of on.channels().values()) {
+          if (offered.topic !== topic || subscriptions.has(offered.id)) continue;
+          subscriptions.set(offered.id, on.subscribe(offered.id));
+        }
+      };
+      update();
+      const timer = setInterval(update, 50);
+      return {
+        /** Whether a message with this text arrived on any of them since `since`. */
+        received: (text: string, since: number) =>
+          on.received
+            .slice(since)
+            .some(
+              (message: Received) =>
+                Array.from(subscriptions.values()).some((id) => isMessageData(id)(message)) &&
+                readString((message as MessageData).data) === text
+            ),
+        stop: () => {
+          clearInterval(timer);
+          // Subscriptions to a channel the server removed have ended already.
+          const offered = on.channels();
+          subscriptions.forEach((id, channelId) => {
+            if (offered.has(channelId)) on.unsubscribe(id);
+          });
+        },
+      };
+    };
+
+    const waitFor = async (condition: () => boolean, timeoutMs: number) => {
+      const deadline = Date.now() + timeoutMs;
+      while (!condition() && Date.now() < deadline) await pause(100);
+      return condition();
+    };
+
+    it('delivers a message whose transient-local publisher came after the subscription', async (t) => {
+      if (skip) return t.skip(skip);
+      const late = FIXTURE.lateLatched;
+      const service = info.capabilities.includes('services')
+        ? connection.services().get(late.service)
+        : undefined;
+      if (!service) return t.skip(`the server does not offer ${late.service}`);
+
+      await connection.channel(late.topic, late.type);
+      const first = follow(connection, late.topic);
+      try {
+        // The server subscribes while the topic has no publisher.
+        await pause(1500);
+        const since = connection.mark();
+        connection.sendServiceCall(service.id, connection.id(), 'cdr', writeSetBoolRequest(true));
+        assert.ok(
+          await waitFor(() => first.received(late.text, since), 10000),
+          `${late.topic} never delivered its message`
+        );
+
+        // And to a client that subscribes while the first one still is.
+        const later = await Connection.open(SERVER_URL);
+        const second = follow(later, late.topic);
+        try {
+          await later.channel(late.topic, late.type);
+          assert.ok(
+            await waitFor(() => second.received(late.text, 0), 10000),
+            `${late.topic} did not deliver its message to a later subscriber`
+          );
+        } finally {
+          second.stop();
+          later.close();
+        }
+      } finally {
+        first.stop();
+      }
+    });
   });
 
   describe('transforms', () => {

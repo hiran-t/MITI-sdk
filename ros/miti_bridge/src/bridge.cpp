@@ -183,8 +183,27 @@ void Bridge::update_topics()
   std::lock_guard<std::mutex> lock(mutex_);
   for (auto topic = topics_.begin(); topic != topics_.end(); ) {
     if (present.count(topic->first)) {
-      ++topic;
-      continue;
+      if (!topic->second.subscription) {
+        ++topic;
+        continue;
+      }
+      // A topic clients watch, whose publishers may have come after its channel or its
+      // subscription. A transient-local publisher sends its message once, which a subscription
+      // without transient-local QoS never gets, and which a channel made before it does not keep
+      // for later subscribers.
+      const auto now = match(topic->second.name);
+      if (now.latched_publishers <= topic->second.channel->spec().latched) {
+        if (now.publishers > 0 && !now.same_qos(topic->second.subscribed)) {
+          RCLCPP_DEBUG(node_->get_logger(), "Subscribing to %s again with its publishers' QoS",
+            topic->second.name.c_str());
+          create_subscription(topic->second, now);
+        }
+        ++topic;
+        continue;
+      }
+      // Offer it again below, as a channel that keeps them: clients subscribe to that one.
+      RCLCPP_DEBUG(node_->get_logger(), "Offering %s again: it has transient-local publishers now",
+        topic->second.name.c_str());
     }
     server_->remove_channel(*topic->second.channel);
     topic_of_channel_.erase(topic->second.channel->id());
@@ -205,16 +224,10 @@ void Bridge::update_topics()
     }
     // Transient-local publishers (/tf_static, /robot_description) send once: keep the last
     // message of each for clients that subscribe later.
-    for (const auto & publisher : node_->get_publishers_info_by_topic(name)) {
-      if (publisher.qos_profile().get_rmw_qos_profile().durability ==
-        RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
-      {
-        ++spec.latched;
-      }
-    }
+    spec.latched = match(name).latched_publishers;
     auto channel = server_->add_channel(std::move(spec));
     topic_of_channel_[channel->id()] = key;
-    topics_[key] = {name, type, std::move(channel), nullptr};
+    topics_[key] = {name, type, std::move(channel), nullptr, {}};
   }
 }
 
@@ -283,24 +296,38 @@ void Bridge::subscribe(const miti::Channel & channel)
   if (key == topic_of_channel_.end()) return;
   auto & topic = topics_.at(key->second);
   if (topic.subscription) return;
+  create_subscription(topic, match(topic.name));
+}
 
+Bridge::Match Bridge::match(const std::string & topic) const
+{
   // Match the publishers: reliable unless one is best effort, transient-local if all are, and
   // deep enough for every publisher's history.
-  const auto publishers = node_->get_publishers_info_by_topic(topic.name);
-  size_t depth = 0;
-  bool best_effort = false;
-  bool transient_local = !publishers.empty();
+  const auto publishers = node_->get_publishers_info_by_topic(topic);
+  Match match;
+  match.transient_local = !publishers.empty();
   for (const auto & publisher : publishers) {
     const auto qos = publisher.qos_profile().get_rmw_qos_profile();
-    depth += qos.depth;
-    best_effort |= qos.reliability == RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
-    transient_local &= qos.durability == RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+    const bool latched = qos.durability == RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+    ++match.publishers;
+    match.depth += qos.depth;
+    match.best_effort |= qos.reliability == RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
+    match.transient_local &= latched;
+    match.latched_publishers += latched;
   }
-  rclcpp::QoS qos(std::clamp<size_t>(depth, 1, settings_.max_qos_depth));
-  if (best_effort) qos.best_effort();
-  if (transient_local) qos.transient_local();
+  return match;
+}
+
+void Bridge::create_subscription(Topic & topic, const Match & match)
+{
+  rclcpp::QoS qos(std::clamp<size_t>(match.depth, 1, settings_.max_qos_depth));
+  if (match.best_effort) qos.best_effort();
+  if (match.transient_local) qos.transient_local();
 
   try {
+    // Replacing a subscription drops the old one first, so the new one is the only reader.
+    topic.subscription.reset();
+    topic.subscribed = match;
     topic.subscription = node_->create_generic_subscription(
       topic.name, topic.type, qos,
       [this, channel = topic.channel](std::shared_ptr<rclcpp::SerializedMessage> message) {

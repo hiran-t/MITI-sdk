@@ -23,6 +23,8 @@ struct SubscriptionOptions
   double max_rate = 0;  // messages per second; 0 for no limit
   Delivery delivery = Delivery::all;
   Priority priority = Priority::normal;
+  /// keepNewest: a message too soon for max_rate waits for its turn instead of being dropped.
+  bool keep_newest = false;
 };
 
 /// The options protocol.md gives a subscription until the client sends its own.
@@ -63,6 +65,8 @@ public:
   /// Whether a message of a subscription may go now under its maxRate; one that may not is
   /// counted as dropped. A transformed message is admitted before it is transformed.
   bool admit(uint32_t subscription, Clock::time_point now);
+  /// From when maxRate lets the subscription's next message go: the epoch when it may go now.
+  Clock::time_point next_admission(uint32_t subscription) const;
   /// Queues an admitted message: a newer one replaces it under `latest` delivery, and the oldest
   /// goes when an `all` queue is full.
   void enqueue(uint32_t subscription, Frame frame, Clock::time_point now);

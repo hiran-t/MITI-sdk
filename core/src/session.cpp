@@ -323,6 +323,14 @@ void Session::subscription_options(const json & message)
       return;
     }
   }
+  if (message.contains("keepNewest")) {
+    const auto & keep = message["keepNewest"];
+    if (!keep.is_boolean()) {
+      error("keepNewest must be true or false");
+      return;
+    }
+    updated.keep_newest = keep.get<bool>();
+  }
   if (message.contains("delivery")) {
     const auto delivery = message["delivery"].get<std::string>();
     if (delivery != "all" && delivery != "latest") {
@@ -367,6 +375,13 @@ void Session::subscription_options(const json & message)
   *options = updated;
 
   auto & state = states_[subscription];
+  if (state.held) {
+    if (!updated.keep_newest) {
+      drop_held(subscription);
+    } else if (updated.max_rate <= 0) {
+      send_held(subscription);  // No limit any more: it may go now.
+    }
+  }
   const auto key = [](const std::optional<transforms::Transform> & t) {
       return t ? t->key() : std::string();
     };
@@ -501,6 +516,18 @@ void Session::send_message(
   if (ended_) return;
   const auto now = Scheduler::Clock::now();
   const auto state = states_.find(subscription);
+  if (state != states_.end()) {
+    const auto * options = scheduler_.options(subscription);
+    if (options && options->keep_newest && options->max_rate > 0) {
+      const auto until = scheduler_.next_admission(subscription);
+      if (now < until) {
+        hold(subscription, std::move(message), time, until);
+        return;
+      }
+    }
+    // This one goes now, and is newer than any kept.
+    if (state->second.held) drop_held(subscription);
+  }
   if (state != states_.end() && state->second.transform) {
     // maxRate first: a message that would be dropped is never transformed.
     if (!scheduler_.admit(subscription, now)) return;
@@ -511,6 +538,44 @@ void Session::send_message(
   const auto header = protocol::message_data_header(subscription, time);
   Frame frame{true, Bytes(header.begin(), header.end()), std::move(message)};
   if (scheduler_.push_message(subscription, std::move(frame), now)) pump();
+}
+
+void Session::hold(
+  uint32_t subscription, std::shared_ptr<const Bytes> message, Timestamp time,
+  Scheduler::Clock::time_point until)
+{
+  auto & state = states_.at(subscription);
+  const bool waiting = state.held.has_value();
+  if (waiting) scheduler_.count_dropped(subscription);  // replaced by a newer one
+  state.held = SubscriptionState::Held{std::move(message), time};
+  if (waiting) return;  // The timer is already set: nothing went since, so `until` is the same.
+  if (!state.held_timer) state.held_timer = std::make_unique<net::steady_timer>(ws_.get_executor());
+  state.held_timer->expires_at(until);
+  // The timer belongs to this subscription's state: removing the state cancels the wait.
+  state.held_timer->async_wait(
+    [self = shared_from_this(), subscription](beast::error_code error) {
+      if (error || self->ended_) return;
+      self->send_held(subscription);
+    });
+}
+
+void Session::send_held(uint32_t subscription)
+{
+  const auto state = states_.find(subscription);
+  if (state == states_.end() || !state->second.held) return;
+  auto held = std::move(*state->second.held);
+  state->second.held.reset();
+  if (state->second.held_timer) state->second.held_timer->cancel();
+  send_message(subscription, std::move(held.message), held.time);
+}
+
+void Session::drop_held(uint32_t subscription)
+{
+  const auto state = states_.find(subscription);
+  if (state == states_.end() || !state->second.held) return;
+  state->second.held.reset();
+  if (state->second.held_timer) state->second.held_timer->cancel();
+  scheduler_.count_dropped(subscription);
 }
 
 void Session::deliver(

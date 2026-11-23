@@ -14,6 +14,16 @@ export const FIXTURE = {
   /** Client publishing: what is published on `in` comes back on `echo`. */
   echo: { in: '/conformance/in', out: '/conformance/echo', type: 'std_msgs/msg/String' },
   service: { name: '/conformance/set_bool', type: 'std_srvs/srv/SetBool' },
+  /**
+   * Offered by a subscriber only, until a call to `service` makes a transient-local publisher
+   * that publishes `text` once.
+   */
+  lateLatched: {
+    topic: '/conformance/late_latched',
+    type: 'std_msgs/msg/String',
+    service: '/conformance/start_late_latched',
+    text: 'late',
+  },
   parameter: '/conformance_fixture.robot_description',
   mesh: 'package://miti_conformance_fixture/meshes/cube.stl',
   /** Outside every asset root a server may have. */

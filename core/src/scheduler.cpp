@@ -68,16 +68,24 @@ bool Scheduler::admit(uint32_t subscription, Clock::time_point now)
   const auto found = queues_.find(subscription);
   if (found == queues_.end()) return false;
   auto & queue = found->second;
-  // A message closer than 90 % of 1/maxRate to the last one sent is dropped. The tolerance keeps
-  // a source at exactly maxRate from losing every message that arrives a little early.
-  if (queue.options.max_rate > 0 && queue.last_accepted &&
-    now - *queue.last_accepted < std::chrono::duration<double>(0.9 / queue.options.max_rate))
-  {
+  if (now < next_admission(subscription)) {
     ++queue.dropped;
     return false;
   }
   queue.last_accepted = now;
   return true;
+}
+
+Scheduler::Clock::time_point Scheduler::next_admission(uint32_t subscription) const
+{
+  const auto found = queues_.find(subscription);
+  if (found == queues_.end()) return {};
+  const auto & queue = found->second;
+  if (queue.options.max_rate <= 0 || !queue.last_accepted) return {};
+  // A message closer than 90 % of 1/maxRate to the last one sent is too soon. The tolerance keeps
+  // a source at exactly maxRate from losing every message that arrives a little early.
+  return *queue.last_accepted + std::chrono::ceil<Clock::duration>(
+    std::chrono::duration<double>(0.9 / queue.options.max_rate));
 }
 
 void Scheduler::enqueue(uint32_t subscription, Frame frame, Clock::time_point now)

@@ -48,9 +48,25 @@ class Fixture(Node):
         self.echo_pub = self.create_publisher(String, "/conformance/echo", 10)
         self.create_subscription(String, "/conformance/in", self.echo_pub.publish, 10)
         self.create_service(SetBool, "/conformance/set_bool", self.set_bool)
+        # A topic that only a subscriber offers, until a client asks for its transient-local
+        # publisher: as a node that reads /robot_description may start before the one publishing it.
+        self.create_subscription(String, "/conformance/late_latched", lambda _: None, 10)
+        self.late_latched_pub = None
+        self.create_service(SetBool, "/conformance/start_late_latched", self.start_late_latched)
 
         self.tf_static_pub.publish(TFMessage(transforms=[self.transform("map", "odom", 0.0)]))
         self.create_timer(0.1, self.tick)
+
+    def start_late_latched(self, request, response):
+        if self.late_latched_pub is None:
+            latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+            self.late_latched_pub = self.create_publisher(
+                String, "/conformance/late_latched", latched
+            )
+            self.late_latched_pub.publish(String(data="late"))
+        response.success = True
+        response.message = "published"
+        return response
 
     def set_bool(self, request, response):
         response.success = True

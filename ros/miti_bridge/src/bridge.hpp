@@ -64,12 +64,29 @@ private:
   std::mutex mutex_;
   Definitions definitions_;
   std::set<std::string> unusable_types_;  // warned about once
+  /// The QoS that matches a topic's publishers (see subscribe()).
+  struct Match
+  {
+    size_t publishers = 0;
+    size_t latched_publishers = 0;  // transient-local ones
+    size_t depth = 0;
+    bool best_effort = false;
+    bool transient_local = false;
+    bool same_qos(const Match & other) const
+    {
+      return best_effort == other.best_effort && transient_local == other.transient_local;
+    }
+  };
+  Match match(const std::string & topic) const;
   struct Topic
   {
     std::string name, type;
     std::shared_ptr<miti::Channel> channel;
     rclcpp::GenericSubscription::SharedPtr subscription;
+    Match subscribed;  // what the subscription was made for
   };
+  /// Subscribes to a topic in ROS with QoS that matches its publishers now. Needs mutex_.
+  void create_subscription(Topic & topic, const Match & qos);
   std::map<std::pair<std::string, std::string>, Topic> topics_;  // by (name, type)
   std::map<uint32_t, std::pair<std::string, std::string>> topic_of_channel_;
   struct Service

@@ -94,7 +94,11 @@ miti_bridge offers only the subprotocol `miti.bridge.v1`. `libmiti` is written f
 Extensions are JSON operations whose names start with `miti.`.
 
 1. **`miti.subscriptionOptions`** (client → server)
-   - Fields: `{ op, subscriptionId, maxRate?, delivery?: 'all' | 'latest', priority?: 'high' | 'normal' | 'low', transform? }`.
+   - Fields: `{ op, subscriptionId, maxRate?, keepNewest?, delivery?: 'all' | 'latest', priority?: 'high' | 'normal' | 'low', transform? }`.
+   - `keepNewest` (capability `miti.keepNewest`) sends a message that came too soon for
+     `maxRate` once the rate allows it, so the last message before a topic goes quiet is not
+     lost. Added because a panel that limits its rate kept showing an older message: for
+     example the simulation time after stepping a paused simulation.
    - The client sends it after `subscribe`, and can send it again to change the options.
    - Defaults depend on the message type:
      - TF, joint states and odometry are `high` and `all`.
@@ -353,7 +357,8 @@ MITI-sdk/
   `miti.getSchema`.
 - **Per-subscription decoders.** A subscription switches its decoder when
   `miti.subscriptionFormat` arrives.
-- **Rate limits.** `useTopic`'s `maxRate` and `throttleMs` go to `miti.subscriptionOptions`.
+- **Rate limits.** `useTopic`'s `maxRate` and `throttleMs` go to `miti.subscriptionOptions`, with
+  `keepNewest` when the server has `miti.keepNewest`.
 - **Panel settings.**
   - Image panel: Compression, JPEG on the robot (the default) or Off.
   - 3D Scene point cloud layers: the Point limit, applied with `reduce`.
