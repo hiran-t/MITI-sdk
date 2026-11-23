@@ -8,8 +8,12 @@ The Docker image `ghcr.io/hiran-t/miti-bridge` runs miti_bridge as a service, on
 | `jazzy`        | the newest release, on ROS 2 Jazzy              |
 | `0.1.2-humble` | that release on Humble; also for other versions |
 | `0.1.2-jazzy`  | that release on Jazzy                           |
+| `edge-humble`  | `main` on Humble, rebuilt on every change       |
+| `edge-jazzy`   | `main` on Jazzy, rebuilt on every change        |
 
 Use the ROS distro the robot runs: Humble and Jazzy nodes do not discover each other reliably.
+
+The `edge` images are for trying a change on `main` before it is released, not for robots in use. Their packages carry the last release's version number.
 
 ## 1. Install Docker
 
