@@ -227,7 +227,7 @@ void Bridge::update_topics()
     spec.latched = match(name).latched_publishers;
     auto channel = server_->add_channel(std::move(spec));
     topic_of_channel_[channel->id()] = key;
-    topics_[key] = {name, type, std::move(channel), nullptr};
+    topics_[key] = {name, type, std::move(channel), nullptr, {}};
   }
 }
 
